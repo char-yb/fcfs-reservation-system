@@ -13,15 +13,14 @@ class UserPointEntity(
     @Id
     @Column(name = "user_id")
     val userId: Long,
-
     @Column(name = "point_balance", nullable = false)
     var pointBalance: Long,
-
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
-    fun toDomain(): UserPoint = UserPoint(
-        userId = userId,
-        pointBalance = pointBalance,
-    )
+    fun toDomain(): UserPoint =
+        UserPoint(
+            userId = userId,
+            pointBalance = pointBalance,
+        )
 }

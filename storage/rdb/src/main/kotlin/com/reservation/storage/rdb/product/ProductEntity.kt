@@ -12,26 +12,22 @@ import java.time.LocalDateTime
 class ProductEntity(
     @Column(name = "name", nullable = false, length = 200)
     val name: String,
-
     @Column(name = "price", nullable = false)
     val price: Long,
-
     @Column(name = "check_in_at", nullable = false)
     val checkInAt: LocalDateTime,
-
     @Column(name = "check_out_at", nullable = false)
     val checkOutAt: LocalDateTime,
-
     @Column(name = "sale_open_at", nullable = false)
     val saleOpenAt: LocalDateTime,
 ) : BaseEntity() {
-
-    fun toDomain(): Product = Product(
-        id = id,
-        name = name,
-        price = price,
-        checkInAt = checkInAt,
-        checkOutAt = checkOutAt,
-        saleOpenAt = saleOpenAt,
-    )
+    fun toDomain(): Product =
+        Product(
+            id = id,
+            name = name,
+            price = price,
+            checkInAt = checkInAt,
+            checkOutAt = checkOutAt,
+            saleOpenAt = saleOpenAt,
+        )
 }

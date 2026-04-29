@@ -12,9 +12,9 @@ class UserEntity(
     @Column(name = "name", nullable = false, length = 100)
     val name: String,
 ) : BaseEntity() {
-
-    fun toDomain(): User = User(
-        id = id,
-        name = name,
-    )
+    fun toDomain(): User =
+        User(
+            id = id,
+            name = name,
+        )
 }

@@ -20,29 +20,25 @@ import jakarta.persistence.UniqueConstraint
 class OrderEntity(
     @Column(name = "product_id", nullable = false)
     val productId: Long,
-
     @Column(name = "user_id", nullable = false)
     val userId: Long,
-
     @Column(name = "total_amount", nullable = false)
     val totalAmount: Long,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     var status: OrderStatus = OrderStatus.PENDING,
-
     @Column(name = "order_key", nullable = false, length = 64)
     val orderKey: String,
 ) : BaseEntity() {
-
-    fun toDomain(): Order = Order(
-        id = id,
-        productId = productId,
-        userId = userId,
-        totalAmount = totalAmount,
-        status = status,
-        orderKey = orderKey,
-    )
+    fun toDomain(): Order =
+        Order(
+            id = id,
+            productId = productId,
+            userId = userId,
+            totalAmount = totalAmount,
+            status = status,
+            orderKey = orderKey,
+        )
 
     companion object {
         fun create(
@@ -50,11 +46,12 @@ class OrderEntity(
             userId: Long,
             totalAmount: Long,
             orderKey: String,
-        ): OrderEntity = OrderEntity(
-            productId = productId,
-            userId = userId,
-            totalAmount = totalAmount,
-            orderKey = orderKey,
-        )
+        ): OrderEntity =
+            OrderEntity(
+                productId = productId,
+                userId = userId,
+                totalAmount = totalAmount,
+                orderKey = orderKey,
+            )
     }
 }

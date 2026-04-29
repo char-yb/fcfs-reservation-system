@@ -11,17 +11,6 @@ import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.time.LocalDateTime
 
-enum class OutboxEventType {
-    PAYMENT_RESULT,
-    COMPENSATION_FAILURE,
-}
-
-enum class OutboxEventStatus {
-    PENDING,
-    PROCESSED,
-    FAILED,
-}
-
 @Entity
 @Table(
     name = "outbox_events",
@@ -33,24 +22,18 @@ enum class OutboxEventStatus {
 class OutboxEventEntity(
     @Column(name = "order_id", nullable = false)
     val orderId: Long,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false, length = 30)
     val eventType: OutboxEventType,
-
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     val payload: String,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     var status: OutboxEventStatus = OutboxEventStatus.PENDING,
-
     @Column(name = "created_at", nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
-
     @Column(name = "processed_at")
     var processedAt: LocalDateTime? = null,
-
     @Column(name = "retry_count", nullable = false)
     var retryCount: Int = 0,
 ) {
