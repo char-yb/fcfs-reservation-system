@@ -5,4 +5,5 @@ plugins {
 dependencies {
     implementation(project(":apps:domain"))
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework:spring-tx")
 }

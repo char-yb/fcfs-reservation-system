@@ -1,4 +1,5 @@
 import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
 
 plugins {
     kotlin("jvm") version "2.3.20" apply false
@@ -6,6 +7,7 @@ plugins {
     kotlin("plugin.jpa") version "2.3.20" apply false
     id("org.springframework.boot") version "4.0.6" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.2" apply false
 }
 
 allprojects {
@@ -18,6 +20,11 @@ allprojects {
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    configure<KtlintExtension> {
+        version.set("1.5.0")
+    }
 
     configure<DependencyManagementExtension> {
         imports {
@@ -47,5 +54,6 @@ subprojects {
 
     dependencies {
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
+        "implementation"("io.github.oshai:kotlin-logging-jvm:7.0.3")
     }
 }
