@@ -5,8 +5,8 @@ import com.reservation.api.response.ErrorResponse
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorLevel
 import com.reservation.support.error.ErrorType
+import com.reservation.support.extension.logger
 import jakarta.validation.ConstraintViolationException
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
@@ -22,8 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice(basePackages = ["com.reservation.api"])
 class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
-
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log by logger()
 
     override fun handleExceptionInternal(
         ex: Exception,
@@ -43,9 +42,10 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         status: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        log.warn("MethodArgumentNotValidException: {}", ex.message)
-        val message = ex.bindingResult.fieldErrors
-            .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+        log.warn { "MethodArgumentNotValidException: ${ex.message}" }
+        val message =
+            ex.bindingResult.fieldErrors
+                .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
         val errorResponse = ErrorResponse.of(ErrorType.INVALID_REQUEST.name, message)
         val apiResponse = ApiResponse.fail(status.value(), errorResponse)
         return ResponseEntity.status(status).body(apiResponse)
@@ -57,28 +57,30 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
         status: HttpStatusCode,
         request: WebRequest,
     ): ResponseEntity<Any>? {
-        log.warn("MissingServletRequestParameterException: {}", ex.message)
-        val errorResponse = ErrorResponse.of(
-            ErrorType.INVALID_REQUEST.name,
-            "${ex.parameterName} 파라미터가 필요합니다",
-        )
+        log.warn { "MissingServletRequestParameterException: ${ex.message}" }
+        val errorResponse =
+            ErrorResponse.of(
+                ErrorType.INVALID_REQUEST.name,
+                "${ex.parameterName} 파라미터가 필요합니다",
+            )
         return ResponseEntity.badRequest().body(ApiResponse.fail(400, errorResponse))
     }
 
     @ExceptionHandler(MissingRequestHeaderException::class)
     fun handleMissingHeader(ex: MissingRequestHeaderException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.warn("MissingRequestHeaderException: {}", ex.message)
-        val errorType = when (ex.headerName) {
-            "Idempotency-Key" -> ErrorType.IDEMPOTENCY_KEY_MISSING
-            else -> ErrorType.INVALID_REQUEST
-        }
+        log.warn { "MissingRequestHeaderException: ${ex.message}" }
+        val errorType =
+            when (ex.headerName) {
+                "Idempotency-Key" -> ErrorType.IDEMPOTENCY_KEY_MISSING
+                else -> ErrorType.INVALID_REQUEST
+            }
         val errorResponse = ErrorResponse.of(errorType.name, errorType.message)
         return ResponseEntity.badRequest().body(ApiResponse.fail(errorType.status, errorResponse))
     }
 
     @ExceptionHandler(ConstraintViolationException::class)
     fun handleConstraintViolation(ex: ConstraintViolationException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.warn("ConstraintViolationException: {}", ex.message)
+        log.warn { "ConstraintViolationException: ${ex.message}" }
         val message = ex.constraintViolations.joinToString(", ") { it.message }
         val errorResponse = ErrorResponse.of(ErrorType.INVALID_REQUEST.name, message)
         return ResponseEntity.badRequest().body(ApiResponse.fail(400, errorResponse))
@@ -86,7 +88,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)
     fun handleTypeMismatch(ex: MethodArgumentTypeMismatchException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.warn("MethodArgumentTypeMismatchException: {}", ex.message)
+        log.warn { "MethodArgumentTypeMismatchException: ${ex.message}" }
         val errorResponse = ErrorResponse.of(ErrorType.INVALID_REQUEST.name, ErrorType.INVALID_REQUEST.message)
         return ResponseEntity.badRequest().body(ApiResponse.fail(400, errorResponse))
     }
@@ -95,9 +97,9 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     fun handleErrorException(ex: ErrorException): ResponseEntity<ApiResponse<ErrorResponse>> {
         val errorType = ex.errorType
         when (errorType.level) {
-            ErrorLevel.INFO -> log.info("ErrorException: errorType={}", errorType)
-            ErrorLevel.WARN -> log.warn("ErrorException: errorType={}", errorType)
-            ErrorLevel.ERROR -> log.error("ErrorException: errorType={}", errorType, ex)
+            ErrorLevel.INFO -> log.info { "ErrorException: errorType=$errorType" }
+            ErrorLevel.WARN -> log.warn { "ErrorException: errorType=$errorType" }
+            ErrorLevel.ERROR -> log.error(ex) { "ErrorException: errorType=$errorType" }
         }
         val errorResponse = ErrorResponse.of(errorType.name, errorType.message)
         return ResponseEntity
@@ -107,7 +109,7 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(RuntimeException::class)
     fun handleRuntimeException(ex: RuntimeException): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error("RuntimeException: {}", ex.message, ex)
+        log.error(ex) { "RuntimeException: ${ex.message}" }
         val errorResponse = ErrorResponse.of(ex.javaClass.simpleName, ErrorType.INTERNAL_SERVER_ERROR.message)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -116,11 +118,10 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(Exception::class)
     fun handleUnexpected(ex: Exception): ResponseEntity<ApiResponse<ErrorResponse>> {
-        log.error("Unexpected error: {}", ex.message, ex)
+        log.error(ex) { "Unexpected error: ${ex.message}" }
         val errorResponse = ErrorResponse.of(ex.javaClass.simpleName, ErrorType.DEFAULT.message)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.fail(500, errorResponse))
     }
-
 }
