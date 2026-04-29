@@ -48,3 +48,5 @@ out/
 
 # Environment
 .env
+
+docs
