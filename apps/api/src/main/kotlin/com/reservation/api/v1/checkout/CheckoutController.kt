@@ -1,7 +1,7 @@
 package com.reservation.api.v1.checkout
 
-import com.reservation.api.v1.checkout.response.CheckoutResponse
 import com.reservation.api.response.ApiResponse
+import com.reservation.api.v1.checkout.response.CheckoutResponse
 import com.reservation.application.checkout.CheckoutService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

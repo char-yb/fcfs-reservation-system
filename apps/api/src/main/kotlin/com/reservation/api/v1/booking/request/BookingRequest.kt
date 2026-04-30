@@ -18,6 +18,9 @@ data class BookingRequest(
             userId = userId,
             totalAmount = totalAmount,
             orderKey = orderKey,
-            payments = payments.map { PaymentCommand(method = it.method, amount = it.amount, attributes = it.attributes) },
+            payments =
+                payments.map {
+                    PaymentCommand(method = it.method, amount = it.amount, userId = userId, attributes = it.attributes)
+                },
         )
 }

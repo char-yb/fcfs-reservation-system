@@ -22,13 +22,14 @@ class CreditCardPaymentStrategy(
             command.attributes["cardToken"]
                 ?: throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
-        val response = pgGatewayRegistry.get(method).charge(
-            PgChargeRequest(
-                method = "CARD",
-                amount = command.amount,
-                token = cardToken
+        val response =
+            pgGatewayRegistry.get(method).charge(
+                PgChargeRequest(
+                    method = "CARD",
+                    amount = command.amount,
+                    token = cardToken,
+                ),
             )
-        )
         return PaymentExecutionResult(method = method, amount = command.amount, transactionId = response.transactionId)
     }
 

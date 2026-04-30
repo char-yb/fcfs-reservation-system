@@ -11,14 +11,13 @@ import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.UUID
 
-/** KakaoPay Gateway Mock
- * 카카오페이 구현체로 실제 카카오페이 연동을 위한 클래스입니다.
- * 실제 연동 시에는 API 호출 로직과 예외 처리를 구현해야 합니다.
- * 현재는 테스트용으로 사용되는 클래스입니다.
+/**
+ * Y_PAY Gateway Mock.
+ * 실제 연동 시에는 API 호출 로직과 예외 처리를 구현해야 한다.
  */
 @Component
-class MockKakaoPayGateway : PaymentGateway {
-    override val method: PaymentMethod = PaymentMethod.KAKAO_PAY
+class MockYPayGateway : PaymentGateway {
+    override val method: PaymentMethod = PaymentMethod.Y_PAY
 
     override fun charge(request: PgChargeRequest): PgChargeResponse {
         if (request.token.startsWith("exceeded_limit_")) {

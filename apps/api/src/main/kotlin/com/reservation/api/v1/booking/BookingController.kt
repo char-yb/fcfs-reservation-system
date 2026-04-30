@@ -1,8 +1,8 @@
 package com.reservation.api.v1.booking
 
+import com.reservation.api.response.ApiResponse
 import com.reservation.api.v1.booking.request.BookingRequest
 import com.reservation.api.v1.booking.response.BookingResponse
-import com.reservation.api.response.ApiResponse
 import com.reservation.application.booking.BookingFacade
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
@@ -23,7 +23,7 @@ class BookingController(
     @PostMapping("/{userId}")
     fun booking(
         @PathVariable userId: Long,
-        @RequestHeader("Idempotency-Key") idempotencyKey: String,   // 멱등성 보장을 위한 주문 키
+        @RequestHeader("Idempotency-Key") idempotencyKey: String, // 멱등성 보장을 위한 주문 키
         @Valid @RequestBody request: BookingRequest,
     ): ApiResponse<BookingResponse> {
         runCatching { UUID.fromString(idempotencyKey) }

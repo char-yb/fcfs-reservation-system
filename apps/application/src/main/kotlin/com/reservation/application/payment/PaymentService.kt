@@ -22,12 +22,13 @@ class PaymentService(
         validator.validate(commands)
         validator.validateTotal(commands, totalAmount)
 
-        val ordered = commands.sortedBy { command ->
-            when (command.method) {
-                PaymentMethod.POINT -> 0
-                else -> 1
+        val ordered =
+            commands.sortedBy { command ->
+                when (command.method) {
+                    PaymentMethod.Y_POINT -> 0
+                    else -> 1
+                }
             }
-        }
         val results = mutableListOf<PaymentExecutionResult>()
         try {
             for (command in ordered) {

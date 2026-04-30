@@ -1,4 +1,4 @@
-package com.reservation.application.payment.toss
+package com.reservation.application.payment.ypay
 
 import com.reservation.application.payment.PgGatewayRegistry
 import com.reservation.domain.payment.CancelResult
@@ -12,23 +12,24 @@ import com.reservation.support.error.ErrorType
 import org.springframework.stereotype.Component
 
 @Component
-class TossPayPaymentStrategy(
+class YPayPaymentStrategy(
     private val pgGatewayRegistry: PgGatewayRegistry,
 ) : PaymentStrategy {
-    override val method: PaymentMethod = PaymentMethod.TOSS_PAY
+    override val method: PaymentMethod = PaymentMethod.Y_PAY
 
     override fun pay(command: PaymentCommand): PaymentExecutionResult {
         val payToken =
             command.attributes["payToken"]
                 ?: throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
-        val response = pgGatewayRegistry.get(method).charge(
-            PgChargeRequest(
-                method = "TOSS_PAY",
-                amount = command.amount,
-                token = payToken
+        val response =
+            pgGatewayRegistry.get(method).charge(
+                PgChargeRequest(
+                    method = "Y_PAY",
+                    amount = command.amount,
+                    token = payToken,
+                ),
             )
-        )
         return PaymentExecutionResult(method = method, amount = command.amount, transactionId = response.transactionId)
     }
 

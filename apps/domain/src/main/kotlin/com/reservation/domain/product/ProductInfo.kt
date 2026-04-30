@@ -8,5 +8,5 @@ data class ProductInfo(
     val price: Long,
     val checkInAt: LocalDateTime,
     val checkOutAt: LocalDateTime,
-    val remainingQuantity: Int
+    val remainingQuantity: Int,
 )

@@ -17,8 +17,8 @@ class PaymentValidator {
         }
 
         val hasCard = PaymentMethod.CREDIT_CARD in types
-        val hasPgPay = types.any { it == PaymentMethod.TOSS_PAY || it == PaymentMethod.KAKAO_PAY }
-        if (hasCard && hasPgPay) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
+        val hasYPay = PaymentMethod.Y_PAY in types
+        if (hasCard && hasYPay) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
         commands.forEach {
             if (it.amount <= 0) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
