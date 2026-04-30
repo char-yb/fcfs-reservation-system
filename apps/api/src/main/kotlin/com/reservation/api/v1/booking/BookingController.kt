@@ -1,7 +1,7 @@
-package com.reservation.api.booking
+package com.reservation.api.v1.booking
 
-import com.reservation.api.booking.request.BookingRequest
-import com.reservation.api.booking.response.BookingResponse
+import com.reservation.api.v1.booking.request.BookingRequest
+import com.reservation.api.v1.booking.response.BookingResponse
 import com.reservation.api.response.ApiResponse
 import com.reservation.application.booking.BookingFacade
 import com.reservation.support.error.ErrorException
@@ -16,23 +16,19 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/booking")
+@RequestMapping("/api/v1/booking")
 class BookingController(
     private val bookingFacade: BookingFacade,
 ) {
     @PostMapping("/{userId}")
-    fun book(
+    fun booking(
         @PathVariable userId: Long,
-        @RequestHeader("Idempotency-Key") idempotencyKey: String,
+        @RequestHeader("Idempotency-Key") idempotencyKey: String,   // 멱등성 보장을 위한 주문 키
         @Valid @RequestBody request: BookingRequest,
     ): ApiResponse<BookingResponse> {
-        validateIdempotencyKey(idempotencyKey)
-        val result = bookingFacade.book(request.toCommand(userId = userId, orderKey = idempotencyKey))
-        return ApiResponse.success(BookingResponse.from(result))
-    }
-
-    private fun validateIdempotencyKey(key: String) {
-        runCatching { UUID.fromString(key) }
+        runCatching { UUID.fromString(idempotencyKey) }
             .onFailure { throw ErrorException(ErrorType.IDEMPOTENCY_KEY_INVALID) }
+        val result = bookingFacade.booking(request.toCommand(userId = userId, orderKey = idempotencyKey))
+        return ApiResponse.success(BookingResponse.from(result))
     }
 }

@@ -1,6 +1,6 @@
-package com.reservation.api.checkout
+package com.reservation.api.v1.checkout
 
-import com.reservation.api.checkout.response.CheckoutResponse
+import com.reservation.api.v1.checkout.response.CheckoutResponse
 import com.reservation.api.response.ApiResponse
 import com.reservation.application.checkout.CheckoutService
 import org.springframework.web.bind.annotation.GetMapping
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/checkout")
+@RequestMapping("/api/v1/checkout")
 class CheckoutController(
     private val checkoutService: CheckoutService,
 ) {

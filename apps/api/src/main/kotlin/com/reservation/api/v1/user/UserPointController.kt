@@ -1,8 +1,8 @@
-package com.reservation.api.user
+package com.reservation.api.v1.user
 
 import com.reservation.api.response.ApiResponse
-import com.reservation.api.user.request.PointChargeRequest
-import com.reservation.api.user.response.PointChargeResponse
+import com.reservation.api.v1.user.request.PointChargeRequest
+import com.reservation.api.v1.user.response.PointChargeResponse
 import com.reservation.application.user.UserPointService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PathVariable
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 class UserPointController(
     private val userPointService: UserPointService,
 ) {

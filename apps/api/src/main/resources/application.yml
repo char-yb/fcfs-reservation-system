@@ -1,3 +1,8 @@
+redis:
+  reservation:
+    command-timeout-ms: 200
+    connect-timeout-ms: 1000
+
 spring:
   application:
     name: fcfs-reservation
@@ -37,6 +42,11 @@ spring:
   flyway:
     baseline-on-migrate: false
 
+redis:
+  reservation:
+    host: localhost
+    port: 6379
+
 datasource:
   reservation:
     driver-class-name: org.h2.Driver
@@ -57,6 +67,11 @@ spring:
     baseline-on-migrate: false
     validate-on-migrate: true
     clean-disabled: true
+
+redis:
+  reservation:
+    host: ${REDIS_RESERVATION_HOST}
+    port: ${REDIS_RESERVATION_PORT:6379}
 
 datasource:
   reservation:

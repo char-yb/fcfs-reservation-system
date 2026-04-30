@@ -1,26 +1,13 @@
-package com.reservation.api.checkout.response
+package com.reservation.api.v1.checkout.response
 
-import com.reservation.application.checkout.CheckoutResult
-import java.time.LocalDateTime
+import com.reservation.application.checkout.result.CheckoutResult
+import com.reservation.domain.product.ProductInfo
+import com.reservation.domain.user.UserInfo
 
 data class CheckoutResponse(
     val product: ProductInfo,
     val user: UserInfo,
 ) {
-    data class ProductInfo(
-        val id: Long,
-        val name: String,
-        val price: Long,
-        val checkInAt: LocalDateTime,
-        val checkOutAt: LocalDateTime,
-        val remainingQuantity: Int,
-    )
-
-    data class UserInfo(
-        val id: Long,
-        val availablePoint: Long,
-    )
-
     companion object {
         fun from(
             result: CheckoutResult,
