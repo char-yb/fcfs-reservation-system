@@ -1,33 +1,32 @@
 package com.reservation.application.payment
 
+import com.reservation.application.user.UserPointService
 import com.reservation.domain.payment.CancelResult
 import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentExecutionResult
-import com.reservation.domain.payment.PaymentGateway
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.payment.PaymentProcessor
-import com.reservation.domain.payment.PgChargeRequest
+import com.reservation.domain.payment.PaymentStrategy
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import org.springframework.stereotype.Component
 
 @Component
-class YPayProcessor(
-    private val pgClient: PaymentGateway,
-) : PaymentProcessor {
-    override val method: PaymentMethod = PaymentMethod.PAY
+class PointPaymentStrategy(
+    private val userPointService: UserPointService,
+) : PaymentStrategy {
+    override val method: PaymentMethod = PaymentMethod.POINT
 
     override fun pay(command: PaymentCommand): PaymentExecutionResult {
-        val payToken =
-            command.attributes["payToken"]
+        val userId =
+            command.attributes["userId"]?.toLongOrNull()
                 ?: throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
-        val response = pgClient.charge(PgChargeRequest(method = "PAY", amount = command.amount, token = payToken))
-        return PaymentExecutionResult(method = method, amount = command.amount, transactionId = response.transactionId)
+        val txId = userPointService.deduct(userId, command.amount)
+        return PaymentExecutionResult(method = method, amount = command.amount, transactionId = txId)
     }
 
     override fun cancel(transactionId: String): CancelResult {
-        pgClient.cancel(transactionId)
+        userPointService.refund(transactionId)
         return CancelResult(method = method, transactionId = transactionId)
     }
 }

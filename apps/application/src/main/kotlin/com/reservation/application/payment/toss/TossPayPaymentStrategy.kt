@@ -1,33 +1,39 @@
-package com.reservation.application.payment
+package com.reservation.application.payment.toss
 
+import com.reservation.application.payment.PgGatewayRegistry
 import com.reservation.domain.payment.CancelResult
 import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentExecutionResult
-import com.reservation.domain.payment.PaymentGateway
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.payment.PaymentProcessor
-import com.reservation.domain.payment.PgChargeRequest
+import com.reservation.domain.payment.PaymentStrategy
+import com.reservation.domain.payment.pg.PgChargeRequest
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import org.springframework.stereotype.Component
 
 @Component
-class CreditCardProcessor(
-    private val pgClient: PaymentGateway,
-) : PaymentProcessor {
-    override val method: PaymentMethod = PaymentMethod.CREDIT_CARD
+class TossPayPaymentStrategy(
+    private val pgGatewayRegistry: PgGatewayRegistry,
+) : PaymentStrategy {
+    override val method: PaymentMethod = PaymentMethod.TOSS_PAY
 
     override fun pay(command: PaymentCommand): PaymentExecutionResult {
-        val cardToken =
-            command.attributes["cardToken"]
+        val payToken =
+            command.attributes["payToken"]
                 ?: throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
-        val response = pgClient.charge(PgChargeRequest(method = "CARD", amount = command.amount, token = cardToken))
+        val response = pgGatewayRegistry.get(method).charge(
+            PgChargeRequest(
+                method = "TOSS_PAY",
+                amount = command.amount,
+                token = payToken
+            )
+        )
         return PaymentExecutionResult(method = method, amount = command.amount, transactionId = response.transactionId)
     }
 
     override fun cancel(transactionId: String): CancelResult {
-        pgClient.cancel(transactionId)
+        pgGatewayRegistry.get(method).cancel(transactionId)
         return CancelResult(method = method, transactionId = transactionId)
     }
 }
