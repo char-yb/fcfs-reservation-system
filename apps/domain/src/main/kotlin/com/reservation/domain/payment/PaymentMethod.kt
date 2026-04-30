@@ -2,6 +2,7 @@ package com.reservation.domain.payment
 
 enum class PaymentMethod {
     CREDIT_CARD,
-    PAY,
+    TOSS_PAY,
+    KAKAO_PAY,
     POINT,
 }

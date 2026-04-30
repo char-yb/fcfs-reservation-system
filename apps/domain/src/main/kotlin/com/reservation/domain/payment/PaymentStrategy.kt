@@ -1,6 +1,6 @@
 package com.reservation.domain.payment
 
-interface PaymentProcessor {
+interface PaymentStrategy {
     val method: PaymentMethod
 
     fun pay(command: PaymentCommand): PaymentExecutionResult

@@ -1,4 +1,4 @@
-package com.reservation.domain.payment
+package com.reservation.domain.payment.pg
 
 import java.time.Instant
 
