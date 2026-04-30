@@ -1,3 +1,5 @@
+apply(plugin = "org.jetbrains.kotlin.plugin.jpa")
+
 allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
