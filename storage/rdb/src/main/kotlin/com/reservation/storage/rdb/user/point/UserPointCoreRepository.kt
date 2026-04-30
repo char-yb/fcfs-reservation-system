@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.user
+package com.reservation.storage.rdb.user.point
 
 import com.reservation.domain.user.UserPoint
 import com.reservation.domain.user.UserPointRepository

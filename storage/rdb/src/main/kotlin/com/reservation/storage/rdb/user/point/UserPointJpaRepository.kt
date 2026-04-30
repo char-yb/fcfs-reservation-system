@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.user
+package com.reservation.storage.rdb.user.point
 
 import org.springframework.data.jpa.repository.JpaRepository
 
