@@ -1,4 +1,4 @@
-package com.reservation.application.checkout
+package com.reservation.application.checkout.result
 
 import com.reservation.domain.product.Product
 import com.reservation.domain.product.ProductStock

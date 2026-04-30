@@ -1,4 +1,4 @@
-package com.reservation.application.booking
+package com.reservation.application.booking.command
 
 import com.reservation.domain.payment.PaymentCommand
 

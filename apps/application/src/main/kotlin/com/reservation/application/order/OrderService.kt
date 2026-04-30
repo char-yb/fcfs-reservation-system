@@ -13,7 +13,7 @@ class OrderService(
     private val orderRepository: OrderRepository,
 ) {
     @Transactional
-    fun createPending(
+    fun create(
         productId: Long,
         userId: Long,
         totalAmount: Long,

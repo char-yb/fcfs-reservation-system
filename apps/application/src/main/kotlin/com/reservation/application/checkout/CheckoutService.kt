@@ -1,5 +1,6 @@
 package com.reservation.application.checkout
 
+import com.reservation.application.checkout.result.CheckoutResult
 import com.reservation.application.product.ProductService
 import com.reservation.application.user.UserPointService
 import org.springframework.stereotype.Service
