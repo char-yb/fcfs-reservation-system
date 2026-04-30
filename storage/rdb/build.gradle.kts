@@ -1,8 +1,3 @@
-plugins {
-    kotlin("plugin.spring")
-    kotlin("plugin.jpa")
-}
-
 allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
@@ -12,15 +7,14 @@ allOpen {
 dependencies {
     implementation(project(":apps:domain"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-mysql")
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.mysql)
 
-    runtimeOnly("com.h2database:h2")
-    runtimeOnly("com.mysql:mysql-connector-j")
+    runtimeOnly(libs.h2)
+    runtimeOnly(libs.mysql.connector.j)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testRuntimeOnly("com.h2database:h2")
+    testImplementation(libs.spring.boot.starter.data.jpa.test)
+    testImplementation(libs.kotlin.test.junit5)
+    testRuntimeOnly(libs.h2)
 }

@@ -1,10 +1,6 @@
-plugins {
-    kotlin("plugin.spring")
-}
-
 dependencies {
     implementation(project(":apps:domain"))
-    implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.redisson:redisson:3.45.1")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    implementation(libs.spring.boot.starter)
+    implementation(libs.redisson)
+    annotationProcessor(libs.spring.boot.configuration.processor)
 }
