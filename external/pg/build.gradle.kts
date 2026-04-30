@@ -5,6 +5,4 @@ plugins {
 dependencies {
     implementation(project(":apps:domain"))
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.redisson:redisson:3.45.1")
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 }

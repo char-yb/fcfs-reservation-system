@@ -6,4 +6,5 @@ include(
     "apps:api",
     "storage:rdb",
     "storage:redis",
+    "external:pg",
 )

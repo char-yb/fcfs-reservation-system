@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":apps:application"))
     implementation(project(":storage:rdb"))
     implementation(project(":storage:redis"))
+    implementation(project(":external:pg"))
 
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")

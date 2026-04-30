@@ -43,8 +43,17 @@ out/
 
 # AI Tools
 .serena
-.codex
 .claude
+
+# Track repo-local Codex harness files while keeping other local Codex state out.
+.codex
+.agents
+AGENTS.md
+
+# Codex intermediate workspace: keep the policy file, ignore run artifacts.
+_workspace/*
+_workspace
+!_workspace/README.md
 
 # Environment
 .env
