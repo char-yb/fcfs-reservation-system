@@ -11,7 +11,6 @@ import org.springframework.core.env.Environment
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
-import java.time.Duration
 
 @SpringBootTest
 class FcfsReservationApplicationTests {
@@ -32,11 +31,8 @@ class FcfsReservationApplicationTests {
         environment.getProperty("resilience4j.circuitbreaker.instances.redis.sliding-window-size", Int::class.java) shouldBe 100
         environment.getProperty("resilience4j.circuitbreaker.instances.redis.minimum-number-of-calls", Int::class.java) shouldBe 20
         environment.getProperty("resilience4j.circuitbreaker.instances.redis.failure-rate-threshold", Float::class.java) shouldBe 50.0f
-        environment.getProperty(
-            "resilience4j.circuitbreaker.instances.redis.slow-call-duration-threshold",
-            Duration::class.java,
-        ) shouldBe Duration.ofMillis(150)
-        environment.getProperty("resilience4j.circuitbreaker.instances.redis.slow-call-rate-threshold", Float::class.java) shouldBe 50.0f
+        environment.containsProperty("resilience4j.circuitbreaker.instances.redis.slow-call-duration-threshold") shouldBe false
+        environment.containsProperty("resilience4j.circuitbreaker.instances.redis.slow-call-rate-threshold") shouldBe false
         environment.getProperty(
             "resilience4j.circuitbreaker.instances.redis.permitted-number-of-calls-in-half-open-state",
             Int::class.java,

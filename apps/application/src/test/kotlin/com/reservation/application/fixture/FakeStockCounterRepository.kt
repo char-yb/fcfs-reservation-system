@@ -13,6 +13,7 @@ class FakeStockCounterRepository(
 
     override fun decrement(productOptionId: Long): Long {
         decrementFailure?.let { throw it }
+        if (remaining <= 0) return -1L
         remaining -= 1
         return remaining
     }

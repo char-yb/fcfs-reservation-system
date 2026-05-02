@@ -5,6 +5,7 @@ import com.reservation.application.booking.result.BookingResult
 import com.reservation.application.payment.PaymentService
 import com.reservation.application.product.ProductService
 import com.reservation.application.product.StockService
+import com.reservation.domain.order.Order
 import com.reservation.domain.payment.PaymentExecutionResult
 import com.reservation.support.extension.logger
 import org.springframework.stereotype.Component
@@ -22,28 +23,41 @@ class BookingFacade(
         val bookingOption = productService.getBookingOption(command.productOptionId)
         bookingOption.validateSaleOpen()
 
-        return stockService.executeWithStockReservation(command.productOptionId) {
-            val order = bookingReservationProcessor.reserve(command, bookingOption)
-            var paymentResults = emptyList<PaymentExecutionResult>()
-            try {
-                paymentResults = paymentService.execute(command.payments, command.totalAmount, order.id)
-                paymentService.saveApproved(order.id, paymentResults)
-                val confirmed = bookingReservationProcessor.confirm(order.id)
-                BookingResult(orderId = confirmed.id, status = confirmed.status, payments = paymentResults)
-            } catch (e: Exception) {
-                log.warn(e) { "예약 결제/확정 실패 orderId=${order.id}, DB 재고 복구" }
-                if (paymentResults.isNotEmpty()) {
-                    val compensationFailures = paymentService.compensate(order.id, paymentResults)
-                    paymentService.markCancelled(order.id, paymentResults - compensationFailures.toSet())
-                }
-                runCatching {
-                    bookingReservationProcessor.failAndRelease(order.id, command.productOptionId)
-                }.onFailure { recoveryFailure ->
-                    log.error(recoveryFailure) { "예약 실패 후 DB 복구 실패 orderId=${order.id}" }
-                }
-                // L1 카운터 복구는 StockService.executeWithStockReservation 의 outer catch가 담당한다.
-                throw e
+        lateinit var reservedOrder: Order
+        val redisCounterReserved =
+            stockService.executeWithStockReservation(
+                productOptionId = command.productOptionId,
+                action = {
+                    reservedOrder = bookingReservationProcessor.reserve(command, bookingOption)
+                },
+                fallbackAction = {
+                    reservedOrder = bookingReservationProcessor.reserve(command, bookingOption)
+                },
+            )
+
+        var paymentResults = emptyList<PaymentExecutionResult>()
+        try {
+            paymentResults = paymentService.execute(command.payments, command.totalAmount, reservedOrder.id)
+            paymentService.saveApproved(reservedOrder.id, paymentResults)
+
+            val confirmed = bookingReservationProcessor.confirm(reservedOrder.id)
+            return BookingResult(orderId = confirmed.id, status = confirmed.status, payments = paymentResults)
+        } catch (e: Exception) {
+            log.warn(e) { "예약 결제/확정 실패 orderId=${reservedOrder.id}, DB 재고 복구" }
+            if (paymentResults.isNotEmpty()) {
+                val compensationFailures = paymentService.compensate(reservedOrder.id, paymentResults)
+                paymentService.markCancelled(reservedOrder.id, paymentResults - compensationFailures.toSet())
             }
+            runCatching {
+                bookingReservationProcessor.failAndRelease(reservedOrder.id, command.productOptionId)
+            }.onSuccess {
+                if (redisCounterReserved) {
+                    stockService.releaseStockReservation(command.productOptionId)
+                }
+            }.onFailure { recoveryFailure ->
+                log.error(recoveryFailure) { "예약 실패 후 DB 복구 실패 orderId=${reservedOrder.id}" }
+            }
+            throw e
         }
     }
 }

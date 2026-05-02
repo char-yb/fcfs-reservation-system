@@ -11,6 +11,7 @@ data class LockCall(
 
 class RecordingDistributedLock(
     private val failure: RuntimeException? = null,
+    private val events: MutableList<String>? = null,
 ) : DistributedLock {
     val calls = mutableListOf<LockCall>()
 
@@ -22,6 +23,11 @@ class RecordingDistributedLock(
     ): T {
         calls.add(LockCall(key = key, waitTime = waitTime, leaseTime = leaseTime))
         failure?.let { throw it }
-        return action()
+        events?.add("lock:enter")
+        try {
+            return action()
+        } finally {
+            events?.add("lock:exit")
+        }
     }
 }

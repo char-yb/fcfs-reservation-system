@@ -35,6 +35,7 @@ fun bookingFacadeFixture(
     failingMethod: PaymentMethod? = null,
     cancelFailingMethod: PaymentMethod? = null,
     events: MutableList<String> = mutableListOf(),
+    recordLockEvents: Boolean = false,
 ): BookingFacadeFixture =
     bookingFacadeFixture(
         orderRepository =
@@ -56,6 +57,7 @@ fun bookingFacadeFixture(
         failingMethod = failingMethod,
         cancelFailingMethod = cancelFailingMethod,
         paymentEvents = events,
+        recordLockEvents = recordLockEvents,
     )
 
 fun bookingFacadeFixture(
@@ -68,6 +70,7 @@ fun bookingFacadeFixture(
     failingMethod: PaymentMethod? = null,
     cancelFailingMethod: PaymentMethod? = null,
     paymentEvents: MutableList<String> = mutableListOf(),
+    recordLockEvents: Boolean = false,
 ): BookingFacadeFixture {
     val productService =
         ProductService(
@@ -116,7 +119,15 @@ fun bookingFacadeFixture(
                 StockService(
                     productStockRepository = stockRepository,
                     stockCounterRepository = counterRepository,
-                    distributedLock = RecordingDistributedLock(),
+                    distributedLock =
+                        RecordingDistributedLock(
+                            events =
+                                if (recordLockEvents) {
+                                    paymentEvents
+                                } else {
+                                    null
+                                },
+                        ),
                 ),
         )
     return BookingFacadeFixture(

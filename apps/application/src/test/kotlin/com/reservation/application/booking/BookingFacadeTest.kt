@@ -18,7 +18,7 @@ class BookingFacadeTest :
     StringSpec({
         "예약 성공 시 재고를 차감하고 주문을 확정한다" {
             val events = mutableListOf<String>()
-            val fixture = bookingFacadeFixture(events = events)
+            val fixture = bookingFacadeFixture(events = events, recordLockEvents = true)
 
             val result =
                 fixture.facade.booking(
@@ -37,8 +37,10 @@ class BookingFacadeTest :
             fixture.paymentRepository.payments.map { it.status } shouldBe listOf(PaymentStatus.APPROVED, PaymentStatus.APPROVED)
             fixture.paymentEvents shouldBe
                 listOf(
+                    "lock:enter",
                     "stock:decrement",
                     "order:PENDING",
+                    "lock:exit",
                     "pay:Y_POINT",
                     "pay:CREDIT_CARD",
                     "payment:APPROVED:Y_POINT",
@@ -96,6 +98,34 @@ class BookingFacadeTest :
 
             result.status shouldBe OrderStatus.CONFIRMED
             fixture.stockRepository.stocks[1L]?.remainingQuantity shouldBe 0
+            fixture.counterRepository.remaining shouldBe 2L
+            fixture.counterRepository.incrementCalls shouldBe 0
+        }
+
+        "Redis 장애 fallback 예약 후 결제 실패 시 Redis 카운터를 복구하지 않는다" {
+            val fixture =
+                bookingFacadeFixture(
+                    counterDecrementFailure = RedisUnavailableException("redis down"),
+                    failingMethod = PaymentMethod.Y_PAY,
+                )
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    fixture.facade.booking(
+                        bookingCommand(
+                            payments = listOf(paymentCommand(PaymentMethod.Y_PAY, amount = 100_000L)),
+                        ),
+                    )
+                }
+
+            exception.errorType shouldBe ErrorType.PAYMENT_DECLINED
+            fixture
+                .orderRepository
+                .orders
+                .values
+                .single()
+                .status shouldBe OrderStatus.FAILED
+            fixture.stockRepository.stocks[1L]?.remainingQuantity shouldBe 1
             fixture.counterRepository.remaining shouldBe 2L
             fixture.counterRepository.incrementCalls shouldBe 0
         }

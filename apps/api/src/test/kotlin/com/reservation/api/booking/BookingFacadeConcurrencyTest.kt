@@ -116,14 +116,14 @@ class BookingFacadeConcurrencyTest {
     private fun saveOpenBookingOptionWithStock(quantity: Int): Long {
         val now = LocalDateTime.now()
         val product =
-            productJpaRepository.saveAndFlush(
+            productJpaRepository.save(
                 ProductEntity(
                     name = "room",
                     type = ProductType.BOOKING,
                 ),
             )
         val option =
-            productOptionJpaRepository.saveAndFlush(
+            productOptionJpaRepository.save(
                 ProductOptionEntity(
                     productId = product.id,
                     name = "standard",
@@ -131,14 +131,14 @@ class BookingFacadeConcurrencyTest {
                     saleOpenAt = now.minusMinutes(1),
                 ),
             )
-        bookingScheduleJpaRepository.saveAndFlush(
+        bookingScheduleJpaRepository.save(
             BookingScheduleEntity(
                 productOptionId = option.id,
                 checkInAt = now.plusDays(1),
                 checkOutAt = now.plusDays(2),
             ),
         )
-        productStockJpaRepository.saveAndFlush(
+        productStockJpaRepository.save(
             ProductStockEntity(
                 productOptionId = option.id,
                 totalQuantity = quantity,

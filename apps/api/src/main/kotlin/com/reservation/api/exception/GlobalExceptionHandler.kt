@@ -97,10 +97,12 @@ class GlobalExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(ErrorException::class)
     fun handleErrorException(ex: ErrorException): ResponseEntity<ApiResponse<ErrorResponse>> {
         val errorType = ex.errorType
-        when (errorType.level) {
-            ErrorLevel.INFO -> log.info { "ErrorException: errorType=$errorType" }
-            ErrorLevel.WARN -> log.warn { "ErrorException: errorType=$errorType" }
-            ErrorLevel.ERROR -> log.error(ex) { "ErrorException: errorType=$errorType" }
+        if (errorType != ErrorType.STOCK_SOLD_OUT) {
+            when (errorType.level) {
+                ErrorLevel.INFO -> log.info { "ErrorException: errorType=$errorType" }
+                ErrorLevel.WARN -> log.warn { "ErrorException: errorType=$errorType" }
+                ErrorLevel.ERROR -> log.error(ex) { "ErrorException: errorType=$errorType" }
+            }
         }
         val errorResponse = ErrorResponse(errorType.name, errorType.message)
         return ResponseEntity

@@ -64,16 +64,21 @@ class StockServiceTest :
             val distributedLock = RecordingDistributedLock()
             val service = StockService(stockRepository, counterRepository, distributedLock)
 
-            val result = service.executeWithStockReservation(productOptionId = 1L) { "reserved" }
+            val result =
+                service.executeWithStockReservation(
+                    productOptionId = 1L,
+                    action = { },
+                    fallbackAction = { },
+                )
 
-            result shouldBe "reserved"
+            result shouldBe true
             counterRepository.remaining shouldBe 1L
             distributedLock.calls.single().key shouldBe "lock:booking:1"
-            distributedLock.calls.single().waitTime shouldBe Duration.ofMillis(100)
+            distributedLock.calls.single().waitTime shouldBe Duration.ofSeconds(1)
             distributedLock.calls.single().leaseTime shouldBe Duration.ofMillis(5_000)
         }
 
-        "카운터 차감 결과가 음수이면 매진으로 거부하고 카운터를 복구한다" {
+        "카운터 차감 결과가 음수이면 매진으로 거부하고 카운터를 복구하지 않는다" {
             val counterRepository = FakeStockCounterRepository(initialRemaining = 0L)
             val service = StockService(FakeProductStockRepository(), counterRepository, RecordingDistributedLock())
             var fallbackExecuted = false
@@ -82,17 +87,16 @@ class StockServiceTest :
                 shouldThrow<ErrorException> {
                     service.executeWithStockReservation(
                         productOptionId = 1L,
-                        action = { "reserved" },
+                        action = { },
                         fallbackAction = {
                             fallbackExecuted = true
-                            "fallback"
                         },
                     )
                 }
 
             exception.errorType shouldBe ErrorType.STOCK_SOLD_OUT
             counterRepository.remaining shouldBe 0L
-            counterRepository.incrementCalls shouldBe 1
+            counterRepository.incrementCalls shouldBe 0
             fallbackExecuted shouldBe false
         }
 
@@ -101,10 +105,29 @@ class StockServiceTest :
             val service = StockService(FakeProductStockRepository(), counterRepository, RecordingDistributedLock())
 
             shouldThrow<IllegalStateException> {
-                service.executeWithStockReservation(productOptionId = 1L) {
-                    throw IllegalStateException("failed")
-                }
+                service.executeWithStockReservation(
+                    productOptionId = 1L,
+                    action = {
+                        throw IllegalStateException("failed")
+                    },
+                    fallbackAction = { },
+                )
             }
+
+            counterRepository.remaining shouldBe 2L
+            counterRepository.incrementCalls shouldBe 1
+        }
+
+        "예약 후 실패 복구는 Redis 카운터를 복구한다" {
+            val counterRepository = FakeStockCounterRepository(initialRemaining = 2L)
+            val service = StockService(FakeProductStockRepository(), counterRepository, RecordingDistributedLock())
+
+            service.executeWithStockReservation(
+                productOptionId = 1L,
+                action = { },
+                fallbackAction = { },
+            )
+            service.releaseStockReservation(productOptionId = 1L)
 
             counterRepository.remaining shouldBe 2L
             counterRepository.incrementCalls shouldBe 1
@@ -119,19 +142,22 @@ class StockServiceTest :
             val distributedLock = RecordingDistributedLock()
             val service = StockService(FakeProductStockRepository(), counterRepository, distributedLock)
             var primaryExecuted = false
+            var fallbackExecuted = false
 
             val result =
                 service.executeWithStockReservation(
                     productOptionId = 1L,
                     action = {
                         primaryExecuted = true
-                        "primary"
                     },
-                    fallbackAction = { "fallback" },
+                    fallbackAction = {
+                        fallbackExecuted = true
+                    },
                 )
 
-            result shouldBe "fallback"
+            result shouldBe false
             primaryExecuted shouldBe false
+            fallbackExecuted shouldBe true
             distributedLock.calls shouldBe emptyList()
             counterRepository.remaining shouldBe 2L
         }
@@ -140,15 +166,19 @@ class StockServiceTest :
             val counterRepository = FakeStockCounterRepository(initialRemaining = 2L)
             val distributedLock = RecordingDistributedLock(RedisUnavailableException("lock down"))
             val service = StockService(FakeProductStockRepository(), counterRepository, distributedLock)
+            var fallbackExecuted = false
 
             val result =
                 service.executeWithStockReservation(
                     productOptionId = 1L,
-                    action = { "primary" },
-                    fallbackAction = { "fallback" },
+                    action = { },
+                    fallbackAction = {
+                        fallbackExecuted = true
+                    },
                 )
 
-            result shouldBe "fallback"
+            result shouldBe false
+            fallbackExecuted shouldBe true
             distributedLock.calls.single().key shouldBe "lock:booking:1"
             counterRepository.remaining shouldBe 2L
             counterRepository.incrementCalls shouldBe 1
@@ -168,10 +198,9 @@ class StockServiceTest :
                 shouldThrow<ErrorException> {
                     service.executeWithStockReservation(
                         productOptionId = 1L,
-                        action = { "primary" },
+                        action = { },
                         fallbackAction = {
                             fallbackExecuted = true
-                            "fallback"
                         },
                     )
                 }

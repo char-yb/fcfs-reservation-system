@@ -35,77 +35,55 @@ class StockService(
      * L1(Redis counter) + L2(distributed lock) 재고 예약 흐름 실행.
      * Redis adapter가 장애 또는 circuit open 상태를 RedisUnavailableException으로 변환하면
      * L1/L2를 건너뛰고 fallbackAction을 DB-only fallback으로 실행한다.
-     * 단일 action 오버로드는 Redis 장애가 action 시작 전에 확인된 경우 동일 예약 흐름을 DB-only로 실행한다.
      * action 내부 또는 lock 획득 실패 시 발생하는 모든 예외에서 L1 카운터를 복구한다.
      * L3(DB) 롤백은 호출자가 action 내에서 직접 처리한다.
      */
-    fun <T> executeWithStockReservation(
+    fun executeWithStockReservation(
         productOptionId: Long,
-        action: () -> T,
-    ): T = executeWithStockReservation(productOptionId = productOptionId, action = action, fallbackAction = action)
-
-    fun <T> executeWithStockReservation(
-        productOptionId: Long,
-        action: () -> T,
-        fallbackAction: () -> T,
-    ): T {
+        action: () -> Unit,
+        fallbackAction: () -> Unit,
+    ): Boolean {
         var counterReserved = false
         var actionStarted = false
-        var redisFailureBeforeAction = false
 
         return try {
-            executeWithRedisGate(
-                productOptionId = productOptionId,
-                action = {
-                    actionStarted = true
-                    action()
-                },
-                onCounterReserved = { counterReserved = true },
-                onRedisFailureBeforeAction = { redisFailureBeforeAction = !actionStarted },
-            )
+            val remaining = stockCounterRepository.decrement(productOptionId)
+            if (remaining < 0) {
+                throw ErrorException(ErrorType.STOCK_SOLD_OUT)
+            }
+            counterReserved = true
+
+            // tryLock(leaseTime)은 Redisson watchdog을 비활성화한다.
+            // LOCK_LEASE_TIME은 DB 재고 차감 + PENDING 주문 생성 p99 응답 시간 + 버퍼 기준으로 설정한다.
+            // 결제 실행은 락 밖에서 처리해 상품 옵션 단위 직렬화 시간을 줄인다.
+            distributedLock.executeWithLock(
+                key = "lock:booking:$productOptionId",
+                waitTime = LOCK_WAIT_TIME,
+                leaseTime = LOCK_LEASE_TIME,
+            ) {
+                actionStarted = true
+                action()
+                true
+            }
         } catch (e: RedisUnavailableException) {
-            if (!redisFailureBeforeAction && counterReserved) throw e
+            if (counterReserved) restoreCounter(productOptionId)
+            if (actionStarted) throw e
             log.warn(e) { "Redis 장애 감지, DB-only fallback 실행 productOptionId=$productOptionId" }
             fallbackAction()
+            false
+        } catch (e: Exception) {
+            if (counterReserved) restoreCounter(productOptionId)
+            throw e
         }
+    }
+
+    fun releaseStockReservation(productOptionId: Long) {
+        restoreCounter(productOptionId)
     }
 
     private fun findStockOrThrow(productOptionId: Long): ProductStock =
         productStockRepository.findByProductOptionId(productOptionId)
             ?: throw ErrorException(ErrorType.PRODUCT_NOT_FOUND)
-
-    private fun <T> executeWithRedisGate(
-        productOptionId: Long,
-        action: () -> T,
-        onCounterReserved: () -> Unit,
-        onRedisFailureBeforeAction: () -> Unit,
-    ): T {
-        val remaining = stockCounterRepository.decrement(productOptionId)
-        onCounterReserved()
-        if (remaining < 0) {
-            restoreCounter(productOptionId)
-            throw ErrorException(ErrorType.STOCK_SOLD_OUT)
-        }
-
-        // tryLock(leaseTime)은 Redisson watchdog을 비활성화한다.
-        // LOCK_LEASE_TIME은 결제 PG p99 응답 시간 + 버퍼 기준으로 설정한다.
-        // 어플리케이션 레벨 결제 timeout은 leaseTime보다 짧게 유지해야 한다.
-        try {
-            return distributedLock.executeWithLock(
-                key = "lock:booking:$productOptionId",
-                waitTime = LOCK_WAIT_TIME,
-                leaseTime = LOCK_LEASE_TIME,
-                action = action,
-            )
-        } catch (e: RedisUnavailableException) {
-            onRedisFailureBeforeAction()
-            restoreCounter(productOptionId)
-            throw e
-        } catch (e: Exception) {
-            restoreCounter(productOptionId)
-            throw e
-        }
-    }
 
     /**
      * L1 increment 실패는 원래 예외 흐름을 가리지 않고 별도 로그로 남긴다.
@@ -120,7 +98,7 @@ class StockService(
     }
 
     companion object {
-        private val LOCK_WAIT_TIME = Duration.ofMillis(100)
+        private val LOCK_WAIT_TIME = Duration.ofSeconds(1)
         private val LOCK_LEASE_TIME = Duration.ofMillis(5_000)
     }
 }

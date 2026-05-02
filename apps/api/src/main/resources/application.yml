@@ -15,9 +15,6 @@ resilience4j:
         minimum-number-of-calls: 20
         # 표본의 절반 이상이 실패하면 DB-only fallback으로 전환한다. Redis 순간 오류 1~2건은 흡수하되, 장애가 실제 요청 절반을 넘으면 빠르게 우회한다.
         failure-rate-threshold: 50
-        # Redis command-timeout-ms=200보다 낮게 둔다. 150ms 이상 응답은 고 TPS에서 worker/lock 대기열을 키우므로 장애 전조로 본다.
-        slow-call-duration-threshold: 150ms
-        slow-call-rate-threshold: 50
         # OPEN 상태에서는 Redis 재시도를 요청마다 반복하지 않고 5초 동안 DB 정합성 경로로 흘린다. 너무 길게 잡으면 Redis 회복 후에도 DB 부하가 오래 지속된다.
         wait-duration-in-open-state: 5s
         # HALF_OPEN은 10개 Redis 호출만 통과시켜 회복 여부를 확인한다. 100 TPS 기준 약 50ms 분량이라 회복 판단이 빠르고 Redis 재가열 부하도 제한된다.
