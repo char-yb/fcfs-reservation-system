@@ -7,6 +7,8 @@ import com.reservation.application.product.ProductService
 import com.reservation.application.product.StockService
 import com.reservation.domain.order.Order
 import com.reservation.domain.payment.PaymentExecutionResult
+import com.reservation.support.error.ErrorException
+import com.reservation.support.error.ErrorType
 import com.reservation.support.extension.logger
 import org.springframework.stereotype.Component
 
@@ -22,6 +24,9 @@ class BookingFacade(
     fun booking(command: BookingCommand): BookingResult {
         val bookingOption = productService.getBookingOption(command.productOptionId)
         bookingOption.validateSaleOpen()
+        if (!command.totalAmount.isEqualsThan(bookingOption.price)) {
+            throw ErrorException(ErrorType.ORDER_AMOUNT_INVALID)
+        }
 
         lateinit var reservedOrder: Order
         val redisCounterReserved =

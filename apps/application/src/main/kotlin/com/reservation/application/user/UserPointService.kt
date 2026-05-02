@@ -24,9 +24,9 @@ class UserPointService(
     ): UserPoint {
         val userPoint =
             userPointRepository.findByUserId(userId)
-                ?: UserPoint(userId = userId, pointBalance = 0L)
-        val charged = userPoint.copy(pointBalance = userPoint.pointBalance + amount)
-        return userPointRepository.save(charged)
+                ?: return userPointRepository.save(UserPoint(userId = userId, pointBalance = amount))
+        userPointRepository.increase(userId = userPoint.userId, amount = amount)
+        return getPoint(userId)
     }
 
     @Transactional
@@ -34,11 +34,11 @@ class UserPointService(
         userId: Long,
         amount: Long,
     ): String {
-        val userPoint =
+        if (!userPointRepository.deductIfEnough(userId, amount)) {
             userPointRepository.findByUserId(userId)
                 ?: throw ErrorException(ErrorType.USER_NOT_FOUND)
-        val deducted = userPoint.deduct(amount)
-        userPointRepository.save(deducted)
+            throw ErrorException(ErrorType.INSUFFICIENT_POINT)
+        }
         return "pt_${userId}_${amount}_${UUID.randomUUID()}"
     }
 
@@ -47,9 +47,8 @@ class UserPointService(
         val parts = transactionId.split("_")
         val userId = parts[1].toLong()
         val amount = parts[2].toLong()
-        val userPoint =
-            userPointRepository.findByUserId(userId)
-                ?: throw ErrorException(ErrorType.USER_NOT_FOUND)
-        userPointRepository.save(userPoint.refund(amount))
+        if (!userPointRepository.increase(userId, amount)) {
+            throw ErrorException(ErrorType.USER_NOT_FOUND)
+        }
     }
 }

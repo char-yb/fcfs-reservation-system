@@ -19,4 +19,14 @@ class UserPointCoreRepository(
                 ?: UserPointEntity(userId = userPoint.userId, pointBalance = userPoint.pointBalance)
         return jpaRepository.save(entity).toDomain()
     }
+
+    override fun deductIfEnough(
+        userId: Long,
+        amount: Long,
+    ): Boolean = jpaRepository.deductIfEnough(userId = userId, amount = amount) > 0
+
+    override fun increase(
+        userId: Long,
+        amount: Long,
+    ): Boolean = jpaRepository.increase(userId = userId, amount = amount) > 0
 }

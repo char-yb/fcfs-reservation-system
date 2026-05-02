@@ -49,6 +49,26 @@ class BookingFacadeTest :
                 )
         }
 
+        "요청 총액이 상품 옵션 가격과 다르면 예약을 시작하지 않는다" {
+            val fixture = bookingFacadeFixture()
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    fixture.facade.booking(
+                        bookingCommand(
+                            totalAmount = 1L,
+                            payments = listOf(paymentCommand(PaymentMethod.CREDIT_CARD, amount = 1L)),
+                        ),
+                    )
+                }
+
+            exception.errorType shouldBe ErrorType.ORDER_AMOUNT_INVALID
+            fixture.stockRepository.stocks[1L]?.remainingQuantity shouldBe 1
+            fixture.counterRepository.remaining shouldBe 2L
+            fixture.orderRepository.orders shouldBe emptyMap()
+            fixture.paymentRepository.payments shouldBe emptyList()
+        }
+
         "결제 실패 시 주문을 실패 처리하고 DB 재고와 Redis 카운터를 복구한다" {
             val fixture =
                 bookingFacadeFixture(

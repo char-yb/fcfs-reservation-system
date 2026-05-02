@@ -29,6 +29,7 @@ enum class ErrorType(
 
     /** Order */
     DUPLICATE_REQUEST(409, ErrorKind.CONFLICT, "이미 처리된 요청입니다.", ErrorLevel.INFO),
+    ORDER_AMOUNT_INVALID(422, ErrorKind.CLIENT_ERROR, "주문 금액이 유효하지 않습니다.", ErrorLevel.WARN),
 
     /** Payment */
     PAYMENT_METHOD_INVALID(422, ErrorKind.CLIENT_ERROR, "결제 수단 조합이 유효하지 않습니다.", ErrorLevel.WARN),

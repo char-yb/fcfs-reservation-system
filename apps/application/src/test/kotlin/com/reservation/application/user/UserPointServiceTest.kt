@@ -63,6 +63,19 @@ class UserPointServiceTest :
             exception.errorType shouldBe ErrorType.USER_NOT_FOUND
         }
 
+        "포인트 잔액이 부족하면 차감하지 않는다" {
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 3_000L)))
+            val service = UserPointService(repository)
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    service.deduct(userId = 1L, amount = 7_000L)
+                }
+
+            exception.errorType shouldBe ErrorType.INSUFFICIENT_POINT
+            repository.points[1L]?.pointBalance shouldBe 3_000L
+        }
+
         "포인트 거래 식별자로 환불한다" {
             val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 3_000L)))
             val service = UserPointService(repository)

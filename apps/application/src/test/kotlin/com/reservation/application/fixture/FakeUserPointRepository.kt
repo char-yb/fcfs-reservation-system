@@ -14,4 +14,23 @@ class FakeUserPointRepository(
         points[userPoint.userId] = userPoint
         return userPoint
     }
+
+    override fun deductIfEnough(
+        userId: Long,
+        amount: Long,
+    ): Boolean {
+        val userPoint = points[userId] ?: return false
+        if (userPoint.pointBalance < amount) return false
+        points[userId] = userPoint.copy(pointBalance = userPoint.pointBalance - amount)
+        return true
+    }
+
+    override fun increase(
+        userId: Long,
+        amount: Long,
+    ): Boolean {
+        val userPoint = points[userId] ?: return false
+        points[userId] = userPoint.copy(pointBalance = userPoint.pointBalance + amount)
+        return true
+    }
 }
