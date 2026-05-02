@@ -9,6 +9,7 @@ import com.reservation.application.payment.PaymentValidator
 import com.reservation.application.payment.fixture.RecordingPaymentStrategy
 import com.reservation.application.product.ProductService
 import com.reservation.application.product.StockService
+import com.reservation.domain.order.OrderStatus
 import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
@@ -19,14 +20,51 @@ data class BookingFacadeFixture(
     val orderRepository: FakeOrderRepository,
     val stockRepository: FakeProductStockRepository,
     val counterRepository: FakeStockCounterRepository,
+    val paymentRepository: FakePaymentRepository,
+    val outboxRepository: FakeOutboxEventRepository,
     val paymentEvents: MutableList<String>,
 )
+
+fun bookingFacadeFixture(
+    stockRemaining: Int = 1,
+    counterRemaining: Long = 2L,
+    counterDecrementFailure: RuntimeException? = null,
+    orderStatusFailures: Map<OrderStatus, RuntimeException> = emptyMap(),
+    paymentSaveFailure: RuntimeException? = null,
+    failingMethod: PaymentMethod? = null,
+    cancelFailingMethod: PaymentMethod? = null,
+    events: MutableList<String> = mutableListOf(),
+): BookingFacadeFixture =
+    bookingFacadeFixture(
+        orderRepository =
+            FakeOrderRepository(
+                events = events,
+                statusUpdateFailures = orderStatusFailures,
+            ),
+        stockRepository =
+            FakeProductStockRepository(
+                listOf(productStock(remainingQuantity = stockRemaining)),
+                events = events,
+            ),
+        counterRepository =
+            FakeStockCounterRepository(
+                initialRemaining = counterRemaining,
+                decrementFailure = counterDecrementFailure,
+            ),
+        paymentRepository = FakePaymentRepository(saveFailure = paymentSaveFailure, events = events),
+        failingMethod = failingMethod,
+        cancelFailingMethod = cancelFailingMethod,
+        paymentEvents = events,
+    )
 
 fun bookingFacadeFixture(
     orderRepository: FakeOrderRepository,
     stockRepository: FakeProductStockRepository,
     counterRepository: FakeStockCounterRepository = FakeStockCounterRepository(initialRemaining = 2L),
+    paymentRepository: FakePaymentRepository = FakePaymentRepository(),
+    outboxRepository: FakeOutboxEventRepository = FakeOutboxEventRepository(),
     failingMethod: PaymentMethod? = null,
+    cancelFailingMethod: PaymentMethod? = null,
     paymentEvents: MutableList<String> = mutableListOf(),
 ): BookingFacadeFixture {
     val productService =
@@ -44,6 +82,12 @@ fun bookingFacadeFixture(
                     } else {
                         null
                     },
+                cancelFailure =
+                    if (method == cancelFailingMethod) {
+                        IllegalStateException("cancel failed")
+                    } else {
+                        null
+                    },
             )
         }
     val facade =
@@ -58,6 +102,8 @@ fun bookingFacadeFixture(
                 PaymentService(
                     strategyRegistry = PaymentStrategyRegistry(strategies),
                     validator = PaymentValidator(),
+                    paymentRepository = paymentRepository,
+                    outboxEventRepository = outboxRepository,
                 ),
             stockService =
                 StockService(
@@ -71,6 +117,8 @@ fun bookingFacadeFixture(
         orderRepository = orderRepository,
         stockRepository = stockRepository,
         counterRepository = counterRepository,
+        paymentRepository = paymentRepository,
+        outboxRepository = outboxRepository,
         paymentEvents = paymentEvents,
     )
 }

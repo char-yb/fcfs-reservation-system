@@ -1,5 +1,7 @@
 package com.reservation.application.payment.fixture
 
+import com.reservation.application.fixture.FakeOutboxEventRepository
+import com.reservation.application.fixture.FakePaymentRepository
 import com.reservation.application.payment.PaymentService
 import com.reservation.application.payment.PaymentStrategyRegistry
 import com.reservation.application.payment.PaymentValidator
@@ -11,12 +13,17 @@ import com.reservation.support.error.ErrorType
 data class PaymentServiceFixture(
     val service: PaymentService,
     val events: MutableList<String>,
+    val paymentRepository: FakePaymentRepository,
+    val outboxRepository: FakeOutboxEventRepository,
 )
 
 fun paymentServiceFixture(
     events: MutableList<String> = mutableListOf(),
     failingMethod: PaymentMethod? = null,
+    cancelFailingMethod: PaymentMethod? = null,
 ): PaymentServiceFixture {
+    val outboxRepository = FakeOutboxEventRepository()
+    val paymentRepository = FakePaymentRepository(events = events)
     val strategies =
         PaymentMethod.entries.map { method ->
             RecordingPaymentStrategy(
@@ -28,6 +35,12 @@ fun paymentServiceFixture(
                     } else {
                         null
                     },
+                cancelFailure =
+                    if (method == cancelFailingMethod) {
+                        IllegalStateException("cancel failed")
+                    } else {
+                        null
+                    },
             )
         }
     return PaymentServiceFixture(
@@ -35,8 +48,12 @@ fun paymentServiceFixture(
             PaymentService(
                 strategyRegistry = PaymentStrategyRegistry(strategies),
                 validator = PaymentValidator(),
+                paymentRepository = paymentRepository,
+                outboxEventRepository = outboxRepository,
             ),
         events = events,
+        paymentRepository = paymentRepository,
+        outboxRepository = outboxRepository,
     )
 }
 

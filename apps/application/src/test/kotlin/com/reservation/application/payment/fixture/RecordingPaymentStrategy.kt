@@ -11,6 +11,7 @@ class RecordingPaymentStrategy(
     override val method: PaymentMethod,
     private val events: MutableList<String>,
     private val payFailure: ErrorException? = null,
+    private val cancelFailure: RuntimeException? = null,
 ) : PaymentStrategy {
     override fun pay(command: PaymentCommand): PaymentExecutionResult {
         events.add("pay:${method.name}")
@@ -20,6 +21,7 @@ class RecordingPaymentStrategy(
 
     override fun cancel(transactionId: String): CancelResult {
         events.add("cancel:${method.name}:$transactionId")
+        cancelFailure?.let { throw it }
         return CancelResult(method = method, transactionId = transactionId)
     }
 }

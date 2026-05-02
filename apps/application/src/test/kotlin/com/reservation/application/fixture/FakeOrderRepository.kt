@@ -7,6 +7,7 @@ import com.reservation.domain.order.OrderStatus
 class FakeOrderRepository(
     initialOrders: List<Order> = emptyList(),
     private val events: MutableList<String> = mutableListOf(),
+    private val statusUpdateFailures: Map<OrderStatus, RuntimeException> = emptyMap(),
 ) : OrderRepository {
     val orders: MutableMap<Long, Order> = initialOrders.associateBy { it.id }.toMutableMap()
     private var nextId = (orders.keys.maxOrNull() ?: 0L) + 1L
@@ -31,6 +32,7 @@ class FakeOrderRepository(
         id: Long,
         status: OrderStatus,
     ): Order {
+        statusUpdateFailures[status]?.let { throw it }
         val updated = requireNotNull(orders[id]) { "order not found: $id" }.copy(status = status)
         orders[id] = updated
         events.add("order:${status.name}")
