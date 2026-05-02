@@ -44,6 +44,7 @@ export default function () {
 
     check(res, {
         'checkout returns 200 response wrapper': () => ok,
-        'checkout product matches test product': () => body && body.data && body.data.product.id === config.productId,
+        'checkout product option matches test option': () =>
+            body && body.data && body.data.product.productOptionId === config.productOptionId,
     });
 }

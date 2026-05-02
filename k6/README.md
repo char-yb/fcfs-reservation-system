@@ -68,14 +68,14 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 
 | 파일 | 주요 변수 |
 |---|---|
-| `k6/lib/config.js` | `baseUrl`, `productId`, `productPrice`, `stock`, `userStartId`, `userCount` |
+| `k6/lib/config.js` | `baseUrl`, `productOptionId`, `productPrice`, `stock`, `userStartId`, `userCount` |
 | `k6/scenarios/checkout-baseline.js` | `baseTps`, `duration`, `preAllocatedVUs`, `maxVUs` |
 | `k6/scenarios/booking-spike.js` | `baseTps`, `peakTps`, `warmupDuration`, `rampDuration`, `spikeDuration` |
 | `k6/scenarios/midnight-mixed.js` | `checkoutTps`, `peakTps`, `mixedDuration`, `spikeDuration` |
 | `k6/scenarios/idempotency-race.js` | `raceTps`, `duration` |
 | `k6/scenarios/payment-failure.js` | `failureTps`, `duration` |
-| `k6/scripts/reset-local-data.sh` | `product_id`, `stock`, `user_count`, MySQL/Redis 컨테이너 값 |
-| `k6/scripts/verify-local-invariants.sh` | `product_id`, MySQL/Redis 컨테이너 값 |
+| `k6/scripts/reset-local-data.sh` | `product_id`, `product_option_id`, `stock`, `user_count`, MySQL/Redis 컨테이너 값 |
+| `k6/scripts/verify-local-invariants.sh` | `product_option_id`, MySQL/Redis 컨테이너 값 |
 
 예를 들어 500 TPS를 검증하려면 `k6/scenarios/booking-spike.js`의 `peakTps`를 `500`으로 바꾼 뒤 실행한다.
 1000 TPS를 검증하려면 같은 값을 `1000`으로 바꾼다.
@@ -88,7 +88,7 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 | 변수 | 위치 | 의미 |
 |---|---|---|
 | `baseUrl` | `k6/lib/config.js` | 부하테스트 대상 API 서버 주소 |
-| `productId` | `k6/lib/config.js`, `k6/scripts/*.sh` | 테스트 대상 상품 ID. DB 시드, Redis `stock:{productId}`, API 요청이 모두 같은 값을 써야 한다. |
+| `productOptionId` | `k6/lib/config.js`, `k6/scripts/*.sh` | 테스트 대상 상품 옵션 ID. DB 시드, Redis `stock:{productOptionId}`, API 요청이 모두 같은 값을 써야 한다. |
 | `productPrice` | `k6/lib/config.js`, `reset-local-data.sh` | 상품 가격이자 기본 Booking 결제 금액 |
 | `stock` | `k6/lib/config.js`, `reset-local-data.sh` | 과제 기준 한정 수량. 기본값은 10개다. |
 | `userStartId` | `k6/lib/config.js`, `reset-local-data.sh` | 테스트 사용자 ID 시작값 |
@@ -121,7 +121,7 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 
 ## 데이터 초기화와 정합성 검증
 
-각 부하테스트 전에는 로컬 데이터를 초기화한다. 이 스크립트는 상품 1개, 재고 10개, 테스트 사용자 포인트를 만들고 Redis `stock:{productId}` 값을 DB 재고와 맞춘다.
+각 부하테스트 전에는 로컬 데이터를 초기화한다. 이 스크립트는 상품 1개, 예약 옵션 1개, 재고 10개, 테스트 사용자 포인트를 만들고 Redis `stock:{productOptionId}` 값을 DB 재고와 맞춘다.
 
 ```bash
 ./k6/scripts/reset-local-data.sh

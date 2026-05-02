@@ -9,6 +9,7 @@ mysql_user="reservation"
 mysql_password="reservation"
 
 product_id=1
+product_option_id=1
 product_price=100000
 stock=10
 user_start_id=1
@@ -33,6 +34,7 @@ require_container() {
 }
 
 require_positive_int PRODUCT_ID "$product_id"
+require_positive_int PRODUCT_OPTION_ID "$product_option_id"
 require_positive_int PRODUCT_PRICE "$product_price"
 require_positive_int STOCK "$stock"
 require_positive_int USER_START_ID "$user_start_id"
@@ -48,6 +50,7 @@ trap 'rm -f "$sql_file"' EXIT
 cat >"$sql_file" <<SQL
 SET SESSION sql_notes = 0;
 SET @product_id := ${product_id};
+SET @product_option_id := ${product_option_id};
 SET @product_price := ${product_price};
 SET @stock := ${stock};
 SET @user_start_id := ${user_start_id};
@@ -56,15 +59,23 @@ SET @user_end_id := ${user_start_id} + ${user_count} - 1;
 DELETE p
 FROM payments p
 JOIN orders o ON o.id = p.order_id
-WHERE o.product_id = @product_id;
+JOIN order_products op ON op.order_id = o.id
+WHERE op.product_option_id = @product_option_id;
 
 DELETE FROM outbox_events
 WHERE order_id IN (
-    SELECT id FROM orders WHERE product_id = @product_id
+    SELECT order_id FROM order_products WHERE product_option_id = @product_option_id
 );
 
-DELETE FROM orders WHERE product_id = @product_id;
-DELETE FROM product_stock WHERE product_id = @product_id;
+DELETE o
+FROM orders o
+JOIN order_products op ON op.order_id = o.id
+WHERE op.product_option_id = @product_option_id;
+
+DELETE FROM order_products WHERE product_option_id = @product_option_id;
+DELETE FROM product_stock WHERE product_option_id = @product_option_id;
+DELETE FROM booking_schedules WHERE product_option_id = @product_option_id;
+DELETE FROM product_options WHERE id = @product_option_id;
 DELETE FROM products WHERE id = @product_id;
 DELETE FROM user_points WHERE user_id BETWEEN @user_start_id AND @user_end_id;
 DELETE FROM users WHERE id BETWEEN @user_start_id AND @user_end_id;
@@ -72,36 +83,64 @@ DELETE FROM users WHERE id BETWEEN @user_start_id AND @user_end_id;
 INSERT INTO products (
     id,
     name,
-    price,
-    check_in_at,
-    check_out_at,
-    sale_open_at,
+    type,
     created_at,
     updated_at,
     deleted_at
 ) VALUES (
     @product_id,
     'K6 Midnight Room',
+    'BOOKING',
+    NOW(3),
+    NULL,
+    NULL
+);
+
+INSERT INTO product_options (
+    id,
+    product_id,
+    name,
+    price,
+    sale_open_at,
+    created_at,
+    updated_at,
+    deleted_at
+) VALUES (
+    @product_option_id,
+    @product_id,
+    'Standard',
     @product_price,
-    '2030-01-01 15:00:00.000',
-    '2030-01-02 11:00:00.000',
     '2000-01-01 00:00:00.000',
     NOW(3),
     NULL,
     NULL
 );
 
+INSERT INTO booking_schedules (
+    product_option_id,
+    check_in_at,
+    check_out_at,
+    created_at,
+    updated_at,
+    deleted_at
+) VALUES (
+    @product_option_id,
+    '2030-01-01 15:00:00.000',
+    '2030-01-02 11:00:00.000',
+    NOW(3),
+    NULL,
+    NULL
+);
+
 INSERT INTO product_stock (
-    product_id,
+    product_option_id,
     total_quantity,
     remaining_quantity,
-    version,
     updated_at
 ) VALUES (
-    @product_id,
+    @product_option_id,
     @stock,
     @stock,
-    0,
     NOW(3)
 );
 
@@ -141,7 +180,7 @@ docker exec -i "$mysql_container" mysql \
     -p"$mysql_password" \
     "$mysql_database" <"$sql_file"
 
-docker exec "$redis_container" redis-cli SET "stock:${product_id}" "$stock" >/dev/null
+docker exec "$redis_container" redis-cli SET "stock:${product_option_id}" "$stock" >/dev/null
 
-echo "테스트 데이터 준비 완료 product_id=${product_id} stock=${stock} users=${user_start_id}..$((user_start_id + user_count - 1))"
-echo "Redis stock:${product_id}=$(docker exec "$redis_container" redis-cli GET "stock:${product_id}")"
+echo "테스트 데이터 준비 완료 product_id=${product_id} product_option_id=${product_option_id} stock=${stock} users=${user_start_id}..$((user_start_id + user_count - 1))"
+echo "Redis stock:${product_option_id}=$(docker exec "$redis_container" redis-cli GET "stock:${product_option_id}")"

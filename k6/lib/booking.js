@@ -9,7 +9,7 @@ export function userIdForIteration(offset = 0) {
 }
 
 export function checkoutUrl(userId) {
-    return `${config.baseUrl}/api/v1/checkout/${userId}?productId=${config.productId}`;
+    return `${config.baseUrl}/api/v1/checkout/${userId}?productOptionId=${config.productOptionId}`;
 }
 
 export function bookingUrl(userId) {
@@ -46,7 +46,7 @@ export function yPointPayment(amount = config.productPrice) {
 export function bookingPayload(payments = [creditCardPayment()]) {
     const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
     return JSON.stringify({
-        productId: config.productId,
+        productOptionId: config.productOptionId,
         totalAmount,
         payments,
     });
@@ -76,4 +76,3 @@ export function postBooking(userId, payload = bookingPayload(), idempotencyKey =
         responseCallback: expectedBookingResponse,
     });
 }
-

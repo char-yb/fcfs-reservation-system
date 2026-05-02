@@ -7,7 +7,7 @@ redis_container="${project}-redis"
 mysql_database="fcfs_reservation"
 mysql_user="reservation"
 mysql_password="reservation"
-product_id=1
+product_option_id=1
 allow_redis_drift=0
 
 failures=0
@@ -37,9 +37,9 @@ if ! docker ps --format '{{.Names}}' | grep -Fx "$redis_container" >/dev/null; t
     exit 1
 fi
 
-stock_row="$(mysql_query "SELECT total_quantity, remaining_quantity FROM product_stock WHERE product_id = ${product_id};")"
+stock_row="$(mysql_query "SELECT total_quantity, remaining_quantity FROM product_stock WHERE product_option_id = ${product_option_id};")"
 if [[ -z "$stock_row" ]]; then
-    echo "product_id=${product_id}에 해당하는 product_stock 행이 없습니다" >&2
+    echo "product_option_id=${product_option_id}에 해당하는 product_stock 행이 없습니다" >&2
     exit 1
 fi
 
@@ -52,16 +52,17 @@ order_row="$(
             COALESCE(SUM(status = 'FAILED'), 0),
             COALESCE(SUM(status = 'PENDING'), 0),
             COUNT(*)
-        FROM orders
-        WHERE product_id = ${product_id};
+        FROM orders o
+        JOIN order_products op ON op.order_id = o.id
+        WHERE op.product_option_id = ${product_option_id};
     "
 )"
 read -r confirmed_orders failed_orders pending_orders total_orders <<<"$order_row"
 
-redis_stock="$(docker exec "$redis_container" redis-cli GET "stock:${product_id}" | tr -d '\r')"
+redis_stock="$(docker exec "$redis_container" redis-cli GET "stock:${product_option_id}" | tr -d '\r')"
 expected_remaining=$((total_quantity - confirmed_orders))
 
-echo "product_id=${product_id}"
+echo "product_option_id=${product_option_id}"
 echo "total_quantity=${total_quantity}"
 echo "confirmed_orders=${confirmed_orders}"
 echo "failed_orders=${failed_orders}"
@@ -80,7 +81,7 @@ if [[ "$remaining_quantity" -ne "$expected_remaining" ]]; then
 fi
 
 if [[ -z "$redis_stock" ]]; then
-    fail "Redis stock:${product_id} 키가 없습니다"
+    fail "Redis stock:${product_option_id} 키가 없습니다"
 elif [[ "$redis_stock" != "$remaining_quantity" ]]; then
     if [[ "$allow_redis_drift" == "1" ]]; then
         echo "경고: Redis stock drift 허용 redis=${redis_stock}, db=${remaining_quantity}" >&2
