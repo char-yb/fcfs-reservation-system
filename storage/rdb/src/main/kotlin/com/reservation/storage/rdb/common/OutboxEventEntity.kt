@@ -1,5 +1,9 @@
 package com.reservation.storage.rdb.common
 
+import com.reservation.domain.outbox.OutboxEvent
+import com.reservation.domain.outbox.OutboxEventStatus
+import com.reservation.domain.outbox.OutboxEventType
+import com.reservation.domain.outbox.RawOutboxEventPayload
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -40,4 +44,25 @@ class OutboxEventEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0
+
+    fun toDomain(): OutboxEvent =
+        OutboxEvent(
+            id = id,
+            orderId = orderId,
+            eventType = eventType,
+            payload = RawOutboxEventPayload(payload),
+            status = status,
+            retryCount = retryCount,
+        )
+
+    companion object {
+        fun from(event: OutboxEvent): OutboxEventEntity =
+            OutboxEventEntity(
+                orderId = event.orderId,
+                eventType = event.eventType,
+                payload = event.payload.toString(),
+                status = event.status,
+                retryCount = event.retryCount,
+            )
+    }
 }

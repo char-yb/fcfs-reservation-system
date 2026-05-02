@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.common
+package com.reservation.domain.outbox
 
 enum class OutboxEventStatus {
     PENDING,

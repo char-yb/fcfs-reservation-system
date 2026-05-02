@@ -2,6 +2,7 @@ package com.reservation.storage.rdb.payment
 
 import com.reservation.domain.payment.Payment
 import com.reservation.domain.payment.PaymentRepository
+import com.reservation.domain.payment.PaymentStatus
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -17,10 +18,22 @@ class PaymentCoreRepository(
                         method = payment.method,
                         amount = payment.amount,
                         externalRequestId = payment.externalRequestId,
-                    ).also { it.pgTransactionId = payment.pgTransactionId }
+                    ).also {
+                        it.status = payment.status
+                        it.pgTransactionId = payment.pgTransactionId
+                    }
             }
         return jpaRepository.saveAll(entities).map { it.toDomain() }
     }
 
     override fun findByOrderId(orderId: Long): List<Payment> = jpaRepository.findAllByOrderId(orderId).map { it.toDomain() }
+
+    override fun updateStatusByOrderIdAndTransactionIds(
+        orderId: Long,
+        transactionIds: List<String>,
+        status: PaymentStatus,
+    ): Int {
+        if (transactionIds.isEmpty()) return 0
+        return jpaRepository.updateStatusByOrderIdAndTransactionIds(orderId, transactionIds, status)
+    }
 }
