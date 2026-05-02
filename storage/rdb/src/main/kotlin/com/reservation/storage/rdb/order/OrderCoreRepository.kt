@@ -5,6 +5,7 @@ import com.reservation.domain.order.OrderRepository
 import com.reservation.domain.order.OrderStatus
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -23,7 +24,11 @@ class OrderCoreRepository(
                 totalAmount = order.totalAmount,
                 orderKey = order.orderKey,
             )
-        return jpaRepository.save(entity).toDomain()
+        return try {
+            jpaRepository.saveAndFlush(entity).toDomain()
+        } catch (e: DataIntegrityViolationException) {
+            throw ErrorException(ErrorType.DUPLICATE_REQUEST, e)
+        }
     }
 
     override fun updateStatus(
