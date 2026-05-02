@@ -9,27 +9,22 @@ import org.springframework.stereotype.Component
 @Component
 class PaymentValidator {
     fun validate(commands: List<PaymentCommand>) {
-        require(commands.isNotEmpty()) { "결제 수단이 비어있습니다" }
+        if (commands.isEmpty() || commands.any { it.amount <= 0 }) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
 
-        val types = commands.map { it.method }
-        if (types.size != types.toSet().size) {
+        val methods = commands.map { it.method }
+        if (methods.size != methods.toSet().size) {
             throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
         }
 
-        val hasCard = PaymentMethod.CREDIT_CARD in types
-        val hasYPay = PaymentMethod.Y_PAY in types
+        val hasCard = PaymentMethod.CREDIT_CARD in methods
+        val hasYPay = PaymentMethod.Y_PAY in methods
         if (hasCard && hasYPay) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
-
-        commands.forEach {
-            if (it.amount <= 0) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
-        }
     }
 
     fun validateTotal(
         commands: List<PaymentCommand>,
         expectedTotal: Long,
     ) {
-        val sum = commands.sumOf { it.amount }
-        if (sum != expectedTotal) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
+        if (commands.sumOf { it.amount } != expectedTotal) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
     }
 }

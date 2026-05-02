@@ -47,7 +47,7 @@ class PaymentService(
         }
     }
 
-    private fun compensate(results: List<PaymentExecutionResult>) {
+    fun compensate(results: List<PaymentExecutionResult>) {
         results.reversed().forEach { result ->
             runCatching {
                 strategyRegistry.get(result.method).cancel(result.transactionId)

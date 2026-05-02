@@ -1,6 +1,6 @@
 package com.reservation.application.payment
 
-import com.reservation.application.payment.fixture.PaymentTestFixture.command
+import com.reservation.application.payment.fixture.paymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
@@ -15,8 +15,8 @@ class PaymentValidatorTest :
         "신용카드와 Y 포인트 조합은 허용한다" {
             val commands =
                 listOf(
-                    command(PaymentMethod.CREDIT_CARD, amount = 70_000),
-                    command(PaymentMethod.Y_POINT, amount = 30_000),
+                    paymentCommand(PaymentMethod.CREDIT_CARD, amount = 70_000),
+                    paymentCommand(PaymentMethod.Y_POINT, amount = 30_000),
                 )
 
             validator.validate(commands)
@@ -26,8 +26,8 @@ class PaymentValidatorTest :
         "Y 페이와 Y 포인트 조합은 허용한다" {
             val commands =
                 listOf(
-                    command(PaymentMethod.Y_PAY, amount = 70_000),
-                    command(PaymentMethod.Y_POINT, amount = 30_000),
+                    paymentCommand(PaymentMethod.Y_PAY, amount = 70_000),
+                    paymentCommand(PaymentMethod.Y_POINT, amount = 30_000),
                 )
 
             validator.validate(commands)
@@ -39,8 +39,8 @@ class PaymentValidatorTest :
                 shouldThrow<ErrorException> {
                     validator.validate(
                         listOf(
-                            command(PaymentMethod.CREDIT_CARD),
-                            command(PaymentMethod.Y_PAY),
+                            paymentCommand(PaymentMethod.CREDIT_CARD),
+                            paymentCommand(PaymentMethod.Y_PAY),
                         ),
                     )
                 }
@@ -53,8 +53,8 @@ class PaymentValidatorTest :
                 shouldThrow<ErrorException> {
                     validator.validate(
                         listOf(
-                            command(PaymentMethod.Y_POINT),
-                            command(PaymentMethod.Y_POINT),
+                            paymentCommand(PaymentMethod.Y_POINT),
+                            paymentCommand(PaymentMethod.Y_POINT),
                         ),
                     )
                 }
@@ -65,7 +65,16 @@ class PaymentValidatorTest :
         "0 이하 결제 금액은 거부한다" {
             val exception =
                 shouldThrow<ErrorException> {
-                    validator.validate(listOf(command(PaymentMethod.Y_POINT, amount = 0)))
+                    validator.validate(listOf(paymentCommand(PaymentMethod.Y_POINT, amount = 0)))
+                }
+
+            exception.errorType shouldBe ErrorType.PAYMENT_METHOD_INVALID
+        }
+
+        "결제 수단이 비어있으면 거부한다" {
+            val exception =
+                shouldThrow<ErrorException> {
+                    validator.validate(emptyList())
                 }
 
             exception.errorType shouldBe ErrorType.PAYMENT_METHOD_INVALID
@@ -75,7 +84,7 @@ class PaymentValidatorTest :
             val exception =
                 shouldThrow<ErrorException> {
                     validator.validateTotal(
-                        commands = listOf(command(PaymentMethod.Y_POINT, amount = 10_000)),
+                        commands = listOf(paymentCommand(PaymentMethod.Y_POINT, amount = 10_000)),
                         expectedTotal = 20_000,
                     )
                 }

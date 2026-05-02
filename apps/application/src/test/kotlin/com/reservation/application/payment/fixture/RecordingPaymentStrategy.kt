@@ -7,7 +7,7 @@ import com.reservation.domain.payment.PaymentMethod
 import com.reservation.domain.payment.PaymentStrategy
 import com.reservation.support.error.ErrorException
 
-internal class RecordingPaymentStrategy(
+class RecordingPaymentStrategy(
     override val method: PaymentMethod,
     private val events: MutableList<String>,
     private val payFailure: ErrorException? = null,

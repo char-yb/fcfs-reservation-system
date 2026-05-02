@@ -2,12 +2,12 @@ package com.reservation.application.payment
 
 import com.reservation.application.fixture.FakeUserPointRepository
 import com.reservation.application.fixture.RecordingPaymentGateway
+import com.reservation.application.fixture.userPoint
 import com.reservation.application.payment.credit.CreditCardPaymentStrategy
 import com.reservation.application.payment.ypay.YPayPaymentStrategy
 import com.reservation.application.user.UserPointService
 import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.user.UserPoint
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import io.kotest.assertions.throwables.shouldThrow
@@ -79,7 +79,7 @@ class PaymentStrategyTest :
         }
 
         "Y 포인트는 서버가 주입한 사용자 식별자로 포인트를 차감한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 30_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 30_000L)))
             val strategy = YPointPaymentStrategy(UserPointService(repository))
 
             val result = strategy.pay(PaymentCommand(method = PaymentMethod.Y_POINT, amount = 20_000L, userId = 1L))
@@ -89,7 +89,7 @@ class PaymentStrategyTest :
         }
 
         "Y 포인트 취소는 거래 식별자를 기준으로 환불한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 10_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 10_000L)))
             val strategy = YPointPaymentStrategy(UserPointService(repository))
 
             val result = strategy.cancel("pt_1_20000_uuid")
