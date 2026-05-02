@@ -38,4 +38,18 @@ class FakeOrderRepository(
         events.add("order:${status.name}")
         return updated
     }
+
+    override fun updateStatusIfCurrent(
+        id: Long,
+        currentStatus: OrderStatus,
+        nextStatus: OrderStatus,
+    ): Order? {
+        statusUpdateFailures[nextStatus]?.let { throw it }
+        val order = orders[id] ?: return null
+        if (order.status != currentStatus) return null
+        val updated = order.copy(status = nextStatus)
+        orders[id] = updated
+        events.add("order:${nextStatus.name}")
+        return updated
+    }
 }

@@ -34,7 +34,13 @@ data class Order(
     companion object {
         private val ALLOWED_TRANSITIONS =
             mapOf(
-                OrderStatus.PENDING to setOf(OrderStatus.PAID, OrderStatus.FAILED, OrderStatus.CANCELLED),
+                OrderStatus.PENDING to
+                    setOf(
+                        OrderStatus.PAID,
+                        OrderStatus.CONFIRMED,
+                        OrderStatus.FAILED,
+                        OrderStatus.CANCELLED,
+                    ),
                 OrderStatus.PAID to setOf(OrderStatus.CONFIRMED, OrderStatus.FAILED, OrderStatus.CANCELLED),
             )
     }

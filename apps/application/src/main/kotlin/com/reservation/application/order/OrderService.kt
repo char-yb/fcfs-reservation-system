@@ -33,8 +33,18 @@ class OrderService(
     }
 
     @Transactional
-    fun confirm(orderId: Long): Order = orderRepository.updateStatus(orderId, OrderStatus.CONFIRMED)
+    fun confirm(orderId: Long): Order = transitionPendingOrder(orderId, OrderStatus.CONFIRMED)
 
     @Transactional
-    fun fail(orderId: Long): Order = orderRepository.updateStatus(orderId, OrderStatus.FAILED)
+    fun fail(orderId: Long): Order = transitionPendingOrder(orderId, OrderStatus.FAILED)
+
+    private fun transitionPendingOrder(
+        orderId: Long,
+        nextStatus: OrderStatus,
+    ): Order =
+        orderRepository.updateStatusIfCurrent(
+            id = orderId,
+            currentStatus = OrderStatus.PENDING,
+            nextStatus = nextStatus,
+        ) ?: throw ErrorException(ErrorType.INVALID_ORDER_STATUS_TRANSITION)
 }

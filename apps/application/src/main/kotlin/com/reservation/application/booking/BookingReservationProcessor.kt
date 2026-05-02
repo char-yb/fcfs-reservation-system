@@ -59,7 +59,12 @@ class BookingReservationProcessor(
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun confirm(orderId: Long): Order {
-        val confirmed = orderRepository.updateStatus(orderId, OrderStatus.CONFIRMED)
+        val confirmed =
+            orderRepository.updateStatusIfCurrent(
+                id = orderId,
+                currentStatus = OrderStatus.PENDING,
+                nextStatus = OrderStatus.CONFIRMED,
+            ) ?: throw ErrorException(ErrorType.INVALID_ORDER_STATUS_TRANSITION)
         orderProductRepository.markConfirmedByOrderId(orderId, LocalDateTime.now())
         return confirmed
     }
@@ -69,7 +74,12 @@ class BookingReservationProcessor(
         orderId: Long,
         productOptionId: Long,
     ): Order {
-        val failed = orderRepository.updateStatus(orderId, OrderStatus.FAILED)
+        val failed =
+            orderRepository.updateStatusIfCurrent(
+                id = orderId,
+                currentStatus = OrderStatus.PENDING,
+                nextStatus = OrderStatus.FAILED,
+            ) ?: throw ErrorException(ErrorType.INVALID_ORDER_STATUS_TRANSITION)
         orderProductRepository.markCanceledByOrderId(orderId, LocalDateTime.now())
         productStockRepository.incrementStock(productOptionId)
         return failed

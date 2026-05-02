@@ -124,6 +124,31 @@ class BookingReservationProcessorTest :
             stockRepository.stocks[1L]?.remainingQuantity shouldBe 1
         }
 
+        "대기 상태가 아니면 실패 처리와 DB 재고 복구를 수행하지 않는다" {
+            val orderRepository =
+                FakeOrderRepository(
+                    listOf(pendingOrder().copy(status = OrderStatus.CONFIRMED)),
+                )
+            val orderProductRepository =
+                FakeOrderProductRepository(
+                    listOf(orderProduct(orderId = 1L)),
+                )
+            val stockRepository =
+                FakeProductStockRepository(
+                    listOf(productStock(remainingQuantity = 0)),
+                )
+            val processor = BookingReservationProcessor(stockRepository, orderRepository, orderProductRepository)
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    processor.failAndRelease(orderId = 1L, productOptionId = 1L)
+                }
+
+            exception.errorType shouldBe ErrorType.INVALID_ORDER_STATUS_TRANSITION
+            orderProductRepository.findByOrderId(1L).single().canceledAt shouldBe null
+            stockRepository.stocks[1L]?.remainingQuantity shouldBe 0
+        }
+
         "예약 주문을 확정 처리한다" {
             val orderRepository =
                 FakeOrderRepository(
@@ -140,5 +165,26 @@ class BookingReservationProcessorTest :
 
             confirmed.status shouldBe OrderStatus.CONFIRMED
             orderProductRepository.findByOrderId(1L).single().confirmedAt shouldNotBe null
+        }
+
+        "대기 상태가 아니면 예약 주문을 확정 처리하지 않는다" {
+            val orderRepository =
+                FakeOrderRepository(
+                    listOf(pendingOrder().copy(status = OrderStatus.FAILED)),
+                )
+            val orderProductRepository =
+                FakeOrderProductRepository(
+                    listOf(orderProduct(orderId = 1L)),
+                )
+            val stockRepository = FakeProductStockRepository()
+            val processor = BookingReservationProcessor(stockRepository, orderRepository, orderProductRepository)
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    processor.confirm(orderId = 1L)
+                }
+
+            exception.errorType shouldBe ErrorType.INVALID_ORDER_STATUS_TRANSITION
+            orderProductRepository.findByOrderId(1L).single().confirmedAt shouldBe null
         }
     })

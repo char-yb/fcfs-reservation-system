@@ -41,4 +41,14 @@ class OrderCoreRepository(
         entity.status = status
         return jpaRepository.save(entity).toDomain()
     }
+
+    override fun updateStatusIfCurrent(
+        id: Long,
+        currentStatus: OrderStatus,
+        nextStatus: OrderStatus,
+    ): Order? {
+        val updated = jpaRepository.updateStatusIfCurrent(id, currentStatus, nextStatus)
+        if (updated == 0) return null
+        return findById(id) ?: throw ErrorException(ErrorType.INVALID_REQUEST)
+    }
 }

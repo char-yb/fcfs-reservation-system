@@ -34,6 +34,19 @@ class OrderTest :
             order.transitionTo(OrderStatus.CONFIRMED).status shouldBe OrderStatus.CONFIRMED
         }
 
+        "대기 주문은 확정 상태로 전환된다" {
+            val order =
+                Order(
+                    id = 1L,
+                    userId = 20L,
+                    totalAmount = 100_000L,
+                    status = OrderStatus.PENDING,
+                    orderKey = "order-key",
+                )
+
+            order.transitionTo(OrderStatus.CONFIRMED).status shouldBe OrderStatus.CONFIRMED
+        }
+
         "허용되지 않은 주문 상태 전환은 거부한다" {
             val order =
                 Order(

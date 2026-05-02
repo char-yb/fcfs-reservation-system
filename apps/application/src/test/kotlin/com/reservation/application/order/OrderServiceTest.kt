@@ -66,4 +66,19 @@ class OrderServiceTest :
 
             service.fail(1L).status shouldBe OrderStatus.FAILED
         }
+
+        "대기 상태가 아닌 주문은 실패 상태로 변경하지 않는다" {
+            val repository =
+                FakeOrderRepository(
+                    listOf(pendingOrder().copy(status = OrderStatus.CONFIRMED)),
+                )
+            val service = OrderService(repository)
+
+            val exception =
+                shouldThrow<ErrorException> {
+                    service.fail(1L)
+                }
+
+            exception.errorType shouldBe ErrorType.INVALID_ORDER_STATUS_TRANSITION
+        }
     })

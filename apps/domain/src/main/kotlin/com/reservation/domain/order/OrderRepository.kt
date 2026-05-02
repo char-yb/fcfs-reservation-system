@@ -11,4 +11,10 @@ interface OrderRepository {
         id: Long,
         status: OrderStatus,
     ): Order
+
+    fun updateStatusIfCurrent(
+        id: Long,
+        currentStatus: OrderStatus,
+        nextStatus: OrderStatus,
+    ): Order?
 }
