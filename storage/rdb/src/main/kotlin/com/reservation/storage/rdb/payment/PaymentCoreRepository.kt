@@ -16,7 +16,7 @@ class PaymentCoreRepository(
                     .create(
                         orderId = payment.orderId,
                         method = payment.method,
-                        amount = payment.amount,
+                        amount = payment.amount.amount,
                         externalRequestId = payment.externalRequestId,
                     ).also {
                         it.status = payment.status

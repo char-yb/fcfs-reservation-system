@@ -15,13 +15,13 @@ class CheckoutService(
 ) {
     @Transactional(readOnly = true)
     fun checkout(
-        productId: Long,
+        productOptionId: Long,
         userId: Long,
     ): CheckoutResult {
-        val product = productService.getProduct(productId)
-        product.validateSaleOpen()
-        val stock = stockService.getStock(productId)
+        val bookingOption = productService.getBookingOption(productOptionId)
+        bookingOption.validateSaleOpen()
+        val stock = stockService.getStock(productOptionId)
         val userPoint = userPointService.getPoint(userId)
-        return CheckoutResult(product = product, stock = stock, userPoint = userPoint)
+        return CheckoutResult(bookingOption = bookingOption, stock = stock, userPoint = userPoint)
     }
 }

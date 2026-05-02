@@ -11,23 +11,23 @@ class FakeStockCounterRepository(
     var incrementCalls = 0
     val initialized = mutableMapOf<Long, Int>()
 
-    override fun decrement(productId: Long): Long {
+    override fun decrement(productOptionId: Long): Long {
         decrementFailure?.let { throw it }
         remaining -= 1
         return remaining
     }
 
-    override fun increment(productId: Long) {
+    override fun increment(productOptionId: Long) {
         incrementFailure?.let { throw it }
         incrementCalls += 1
         remaining += 1
     }
 
     override fun initialize(
-        productId: Long,
+        productOptionId: Long,
         quantity: Int,
     ) {
-        initialized[productId] = quantity
+        initialized[productOptionId] = quantity
         remaining = quantity.toLong()
     }
 }

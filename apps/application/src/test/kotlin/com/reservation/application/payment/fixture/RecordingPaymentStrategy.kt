@@ -1,10 +1,10 @@
 package com.reservation.application.payment.fixture
 
+import com.reservation.application.payment.PaymentStrategy
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.domain.payment.CancelResult
-import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentExecutionResult
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.payment.PaymentStrategy
 import com.reservation.support.error.ErrorException
 
 class RecordingPaymentStrategy(

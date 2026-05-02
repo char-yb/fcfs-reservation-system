@@ -2,12 +2,13 @@ package com.reservation.api.v1.booking.response
 
 import com.reservation.application.booking.result.BookingResult
 import com.reservation.domain.order.OrderStatus
-import com.reservation.domain.payment.PaymentInfo
+import com.reservation.domain.payment.PaymentMethod
+import java.math.BigDecimal
 
 data class BookingResponse(
     val orderId: Long,
     val status: OrderStatus,
-    val payments: List<PaymentInfo>,
+    val payments: List<BookingPaymentResponse>,
 ) {
     companion object {
         fun from(result: BookingResult): BookingResponse =
@@ -16,8 +17,18 @@ data class BookingResponse(
                 status = result.status,
                 payments =
                     result.payments.map {
-                        PaymentInfo(method = it.method, amount = it.amount, transactionId = it.transactionId)
+                        BookingPaymentResponse(
+                            method = it.method,
+                            amount = it.amount.amount,
+                            transactionId = it.transactionId,
+                        )
                     },
             )
     }
 }
+
+data class BookingPaymentResponse(
+    val method: PaymentMethod,
+    val amount: BigDecimal,
+    val transactionId: String,
+)

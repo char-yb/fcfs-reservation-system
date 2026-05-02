@@ -1,6 +1,5 @@
 package com.reservation.api.global.initializer
 
-import com.reservation.application.product.ProductService
 import com.reservation.application.product.StockService
 import com.reservation.support.extension.logger
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -8,7 +7,7 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 
 /**
- * 애플리케이션 기동 시 모든 상품의 Redis 재고 카운터(stock:{productId})를 DB 기준으로 초기화한다.
+ * 애플리케이션 기동 시 모든 상품 옵션의 Redis 재고 카운터(stock:{productOptionId})를 DB 기준으로 초기화한다.
  *
  * ## 필요한 이유
  * Booking API는 3-layer 재고 보호를 사용한다.
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Component
  * - Layer 2: Redisson 분산락 — 결제 구간 직렬화
  * - Layer 3: DB 조건부 UPDATE — 최후 정합성 보장
  *
- * Redis에 `stock:{productId}` 키가 없는 상태에서 DECR을 호출하면 Redis는 값을 0으로 간주해 -1을 반환한다.
+ * Redis에 `stock:{productOptionId}` 키가 없는 상태에서 DECR을 호출하면 Redis는 값을 0으로 간주해 -1을 반환한다.
  * 이 경우 Layer 1이 모든 요청을 STOCK_SOLD_OUT으로 즉시 거절하므로 콜드 스타트 전에 반드시 초기화가 필요하다.
  *
  * ## 한계 및 운영 주의사항
@@ -31,31 +30,30 @@ import org.springframework.stereotype.Component
  */
 @Component
 class StockCounterInitializer(
-    private val productService: ProductService,
     private val stockService: StockService,
 ) {
     private val log by logger()
 
     @EventListener(ApplicationReadyEvent::class)
     fun initializeAll() {
-        val products = productService.getProductAll()
-        if (products.isEmpty()) {
-            log.info { "초기화 대상 상품 없음" }
+        val stocks = stockService.getStocks()
+        if (stocks.isEmpty()) {
+            log.info { "초기화 대상 상품 옵션 없음" }
             return
         }
 
         var success = 0
         var failed = 0
-        products.forEach { product ->
+        stocks.forEach { stock ->
             runCatching {
-                stockService.initializeStockCounter(product.id)
+                stockService.initializeStockCounter(stock.productOptionId)
             }.onSuccess {
                 success += 1
             }.onFailure { ex ->
                 failed += 1
-                log.error(ex) { "재고 카운터 초기화 실패 productId=${product.id}" }
+                log.error(ex) { "재고 카운터 초기화 실패 productOptionId=${stock.productOptionId}" }
             }
         }
-        log.info { "재고 카운터 초기화 완료 total=${products.size} success=$success failed=$failed" }
+        log.info { "재고 카운터 초기화 완료 total=${stocks.size} success=$success failed=$failed" }
     }
 }

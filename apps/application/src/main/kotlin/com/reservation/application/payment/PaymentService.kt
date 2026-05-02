@@ -1,11 +1,11 @@
 package com.reservation.application.payment
 
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.domain.outbox.CompensationFailurePayload
 import com.reservation.domain.outbox.OutboxEvent
 import com.reservation.domain.outbox.OutboxEventRepository
 import com.reservation.domain.outbox.OutboxEventType
 import com.reservation.domain.payment.Payment
-import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentExecutionResult
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.domain.payment.PaymentRepository
@@ -13,6 +13,7 @@ import com.reservation.domain.payment.PaymentStatus
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import com.reservation.support.extension.logger
+import com.reservation.support.money.Money
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -33,7 +34,7 @@ class PaymentService(
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun execute(
         commands: List<PaymentCommand>,
-        totalAmount: Long,
+        totalAmount: Money,
         orderId: Long? = null,
     ): List<PaymentExecutionResult> {
         validator.validate(commands)
@@ -126,24 +127,18 @@ class PaymentService(
                 OutboxEvent(
                     orderId = orderId,
                     eventType = OutboxEventType.COMPENSATION_FAILURE,
-                    payload = compensationFailurePayload(orderId, result, cause),
+                    payload =
+                        CompensationFailurePayload(
+                            orderId = orderId,
+                            method = result.method,
+                            amount = result.amount,
+                            pgTransactionId = result.transactionId,
+                            reason = cause.message ?: cause.javaClass.simpleName,
+                        ),
                 ),
             )
         }.onFailure { outboxFailure ->
             log.error(outboxFailure) { "보상 실패 outbox 저장 실패 orderId=$orderId txId=${result.transactionId}" }
         }
     }
-
-    private fun compensationFailurePayload(
-        orderId: Long,
-        result: PaymentExecutionResult,
-        cause: Throwable,
-    ): CompensationFailurePayload =
-        CompensationFailurePayload(
-            orderId = orderId,
-            method = result.method,
-            amount = result.amount,
-            pgTransactionId = result.transactionId,
-            reason = cause.message ?: cause.javaClass.simpleName,
-        )
 }

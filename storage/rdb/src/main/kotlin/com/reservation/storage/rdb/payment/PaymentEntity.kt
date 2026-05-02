@@ -4,12 +4,14 @@ import com.reservation.domain.payment.Payment
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.domain.payment.PaymentStatus
 import com.reservation.storage.rdb.common.BaseEntity
+import com.reservation.support.money.Money
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Index
 import jakarta.persistence.Table
+import java.math.BigDecimal
 
 @Entity
 @Table(
@@ -22,8 +24,8 @@ class PaymentEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "method", nullable = false, length = 20)
     val method: PaymentMethod,
-    @Column(name = "amount", nullable = false)
-    val amount: Long,
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
+    val amount: BigDecimal,
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     var status: PaymentStatus = PaymentStatus.PENDING,
@@ -37,7 +39,7 @@ class PaymentEntity(
             id = id,
             orderId = orderId,
             method = method,
-            amount = amount,
+            amount = Money(amount),
             status = status,
             pgTransactionId = pgTransactionId,
             externalRequestId = externalRequestId,
@@ -47,7 +49,7 @@ class PaymentEntity(
         fun create(
             orderId: Long,
             method: PaymentMethod,
-            amount: Long,
+            amount: BigDecimal,
             externalRequestId: String? = null,
         ): PaymentEntity =
             PaymentEntity(

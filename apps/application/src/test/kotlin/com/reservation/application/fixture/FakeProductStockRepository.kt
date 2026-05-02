@@ -7,23 +7,25 @@ class FakeProductStockRepository(
     initialStocks: List<ProductStock> = emptyList(),
     private val events: MutableList<String> = mutableListOf(),
 ) : ProductStockRepository {
-    val stocks: MutableMap<Long, ProductStock> = initialStocks.associateBy { it.productId }.toMutableMap()
+    val stocks: MutableMap<Long, ProductStock> = initialStocks.associateBy { it.productOptionId }.toMutableMap()
     var incrementCalls = 0
 
-    override fun findByProductId(productId: Long): ProductStock? = stocks[productId]
+    override fun findByProductOptionId(productOptionId: Long): ProductStock? = stocks[productOptionId]
 
-    override fun decrementStock(productId: Long): Boolean {
-        val stock = stocks[productId] ?: return false
+    override fun findAll(): List<ProductStock> = stocks.values.toList()
+
+    override fun decrementStock(productOptionId: Long): Boolean {
+        val stock = stocks[productOptionId] ?: return false
         if (stock.remainingQuantity <= 0) return false
-        stocks[productId] = stock.copy(remainingQuantity = stock.remainingQuantity - 1)
+        stocks[productOptionId] = stock.copy(remainingQuantity = stock.remainingQuantity - 1)
         events.add("stock:decrement")
         return true
     }
 
-    override fun incrementStock(productId: Long) {
+    override fun incrementStock(productOptionId: Long) {
         incrementCalls += 1
-        val stock = requireNotNull(stocks[productId]) { "stock not found: $productId" }
-        stocks[productId] = stock.copy(remainingQuantity = stock.remainingQuantity + 1)
+        val stock = requireNotNull(stocks[productOptionId]) { "stock not found: $productOptionId" }
+        stocks[productOptionId] = stock.copy(remainingQuantity = stock.remainingQuantity + 1)
         events.add("stock:increment")
     }
 }

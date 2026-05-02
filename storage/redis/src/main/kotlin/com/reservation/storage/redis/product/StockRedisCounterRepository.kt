@@ -10,20 +10,20 @@ class StockRedisCounterRepository(
     private val redissonClient: RedissonClient,
 ) : StockCounterRepository {
     @CircuitBreaker(name = "redis")
-    override fun decrement(productId: Long): Long = redissonClient.getAtomicLong(stockKey(productId)).decrementAndGet()
+    override fun decrement(productOptionId: Long): Long = redissonClient.getAtomicLong(stockKey(productOptionId)).decrementAndGet()
 
     @CircuitBreaker(name = "redis")
-    override fun increment(productId: Long) {
-        redissonClient.getAtomicLong(stockKey(productId)).incrementAndGet()
+    override fun increment(productOptionId: Long) {
+        redissonClient.getAtomicLong(stockKey(productOptionId)).incrementAndGet()
     }
 
     @CircuitBreaker(name = "redis")
     override fun initialize(
-        productId: Long,
+        productOptionId: Long,
         quantity: Int,
     ) {
-        redissonClient.getAtomicLong(stockKey(productId)).set(quantity.toLong())
+        redissonClient.getAtomicLong(stockKey(productOptionId)).set(quantity.toLong())
     }
 
-    private fun stockKey(productId: Long) = "stock:$productId"
+    private fun stockKey(productOptionId: Long) = "stock:$productOptionId"
 }

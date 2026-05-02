@@ -5,6 +5,7 @@ import com.reservation.domain.order.OrderRepository
 import com.reservation.domain.order.OrderStatus
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -14,9 +15,8 @@ class OrderService(
 ) {
     @Transactional
     fun create(
-        productId: Long,
         userId: Long,
-        totalAmount: Long,
+        totalAmount: Money,
         orderKey: String,
     ): Order {
         val existing = orderRepository.findByOrderKey(orderKey)
@@ -24,7 +24,6 @@ class OrderService(
         return orderRepository.save(
             Order(
                 id = 0L,
-                productId = productId,
                 userId = userId,
                 totalAmount = totalAmount,
                 status = OrderStatus.PENDING,

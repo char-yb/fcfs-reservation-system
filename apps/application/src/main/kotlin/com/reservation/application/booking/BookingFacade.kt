@@ -19,9 +19,11 @@ class BookingFacade(
     private val log by logger()
 
     fun booking(command: BookingCommand): BookingResult {
-        productService.getProduct(command.productId).validateSaleOpen()
-        return stockService.executeWithStockGuard(command.productId) {
-            val order = bookingReservationProcessor.reserve(command)
+        val bookingOption = productService.getBookingOption(command.productOptionId)
+        bookingOption.validateSaleOpen()
+
+        return stockService.executeWithStockGuard(command.productOptionId) {
+            val order = bookingReservationProcessor.reserve(command, bookingOption)
             var paymentResults = emptyList<PaymentExecutionResult>()
             try {
                 paymentResults = paymentService.execute(command.payments, command.totalAmount, order.id)
@@ -35,7 +37,7 @@ class BookingFacade(
                     paymentService.markCancelled(order.id, paymentResults - compensationFailures.toSet())
                 }
                 runCatching {
-                    bookingReservationProcessor.failAndRelease(order.id, command.productId)
+                    bookingReservationProcessor.failAndRelease(order.id, command.productOptionId)
                 }.onFailure { recoveryFailure ->
                     log.error(recoveryFailure) { "예약 실패 후 DB 복구 실패 orderId=${order.id}" }
                 }

@@ -1,7 +1,6 @@
 package com.reservation.application.payment
 
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.payment.PaymentStrategy
 import org.springframework.stereotype.Component
 
 /**

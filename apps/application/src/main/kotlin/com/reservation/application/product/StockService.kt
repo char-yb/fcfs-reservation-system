@@ -21,11 +21,14 @@ class StockService(
     private val log by logger()
 
     @Transactional(readOnly = true)
-    fun getStock(productId: Long): ProductStock = findStockOrThrow(productId)
+    fun getStock(productOptionId: Long): ProductStock = findStockOrThrow(productOptionId)
 
     @Transactional(readOnly = true)
-    fun initializeStockCounter(productId: Long) {
-        stockCounterRepository.initialize(productId, findStockOrThrow(productId).remainingQuantity)
+    fun getStocks(): List<ProductStock> = productStockRepository.findAll()
+
+    @Transactional(readOnly = true)
+    fun initializeStockCounter(productOptionId: Long) {
+        stockCounterRepository.initialize(productOptionId, findStockOrThrow(productOptionId).remainingQuantity)
     }
 
     /**
@@ -36,12 +39,12 @@ class StockService(
      * L3(DB) 롤백은 호출자가 action 내에서 직접 처리한다.
      */
     fun <T> executeWithStockGuard(
-        productId: Long,
+        productOptionId: Long,
         action: () -> T,
-    ): T = executeWithStockGuard(productId = productId, action = action, fallbackAction = action)
+    ): T = executeWithStockGuard(productOptionId = productOptionId, action = action, fallbackAction = action)
 
     fun <T> executeWithStockGuard(
-        productId: Long,
+        productOptionId: Long,
         action: () -> T,
         fallbackAction: () -> T,
     ): T {
@@ -51,7 +54,7 @@ class StockService(
 
         return try {
             executeWithRedisGate(
-                productId = productId,
+                productOptionId = productOptionId,
                 action = {
                     actionStarted = true
                     action()
@@ -61,25 +64,25 @@ class StockService(
             )
         } catch (e: RedisUnavailableException) {
             if (!redisFailureBeforeAction && counterReserved) throw e
-            log.warn(e) { "Redis 장애 감지, DB-only fallback 실행 productId=$productId" }
+            log.warn(e) { "Redis 장애 감지, DB-only fallback 실행 productOptionId=$productOptionId" }
             fallbackAction()
         }
     }
 
-    private fun findStockOrThrow(productId: Long): ProductStock =
-        productStockRepository.findByProductId(productId)
+    private fun findStockOrThrow(productOptionId: Long): ProductStock =
+        productStockRepository.findByProductOptionId(productOptionId)
             ?: throw ErrorException(ErrorType.PRODUCT_NOT_FOUND)
 
     private fun <T> executeWithRedisGate(
-        productId: Long,
+        productOptionId: Long,
         action: () -> T,
         onCounterReserved: () -> Unit,
         onRedisFailureBeforeAction: () -> Unit,
     ): T {
-        val remaining = stockCounterRepository.decrement(productId)
+        val remaining = stockCounterRepository.decrement(productOptionId)
         onCounterReserved()
         if (remaining < 0) {
-            restoreCounter(productId)
+            restoreCounter(productOptionId)
             throw ErrorException(ErrorType.STOCK_SOLD_OUT)
         }
 
@@ -88,17 +91,17 @@ class StockService(
         // 어플리케이션 레벨 결제 timeout은 leaseTime보다 짧게 유지해야 한다.
         try {
             return distributedLock.executeWithLock(
-                key = "lock:booking:$productId",
+                key = "lock:booking:$productOptionId",
                 waitTime = LOCK_WAIT_TIME,
                 leaseTime = LOCK_LEASE_TIME,
                 action = action,
             )
         } catch (e: RedisUnavailableException) {
             onRedisFailureBeforeAction()
-            restoreCounter(productId)
+            restoreCounter(productOptionId)
             throw e
         } catch (e: Exception) {
-            restoreCounter(productId)
+            restoreCounter(productOptionId)
             throw e
         }
     }
@@ -107,11 +110,11 @@ class StockService(
      * L1 increment 실패는 원래 예외 흐름을 가리지 않고 별도 로그로 남긴다.
      * 복구 실패는 운영 모니터링과 reconciliation 잡으로 보정해야 한다.
      */
-    private fun restoreCounter(productId: Long) {
+    private fun restoreCounter(productOptionId: Long) {
         runCatching {
-            stockCounterRepository.increment(productId)
+            stockCounterRepository.increment(productOptionId)
         }.onFailure { ex ->
-            log.error(ex) { "L1 카운터 복구 실패 productId=$productId, drift 가능 — reconciliation 필요" }
+            log.error(ex) { "L1 카운터 복구 실패 productOptionId=$productOptionId, drift 가능 — reconciliation 필요" }
         }
     }
 

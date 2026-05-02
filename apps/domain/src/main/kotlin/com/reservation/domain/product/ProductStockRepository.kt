@@ -1,9 +1,11 @@
 package com.reservation.domain.product
 
 interface ProductStockRepository {
-    fun findByProductId(productId: Long): ProductStock?
+    fun findByProductOptionId(productOptionId: Long): ProductStock?
 
-    fun decrementStock(productId: Long): Boolean
+    fun findAll(): List<ProductStock>
 
-    fun incrementStock(productId: Long)
+    fun decrementStock(productOptionId: Long): Boolean
+
+    fun incrementStock(productOptionId: Long)
 }

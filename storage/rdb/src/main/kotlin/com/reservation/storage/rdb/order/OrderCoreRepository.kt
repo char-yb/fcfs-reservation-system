@@ -19,13 +19,12 @@ class OrderCoreRepository(
     override fun save(order: Order): Order {
         val entity =
             OrderEntity.create(
-                productId = order.productId,
                 userId = order.userId,
-                totalAmount = order.totalAmount,
+                totalAmount = order.totalAmount.amount,
                 orderKey = order.orderKey,
             )
         return try {
-            jpaRepository.saveAndFlush(entity).toDomain()
+            jpaRepository.save(entity).toDomain()
         } catch (e: DataIntegrityViolationException) {
             throw ErrorException(ErrorType.DUPLICATE_REQUEST, e)
         }

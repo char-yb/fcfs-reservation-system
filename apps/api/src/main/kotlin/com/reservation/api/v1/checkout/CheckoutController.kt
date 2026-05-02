@@ -17,9 +17,9 @@ class CheckoutController(
     @GetMapping("/{userId}")
     fun checkout(
         @PathVariable userId: Long,
-        @RequestParam productId: Long,
+        @RequestParam productOptionId: Long,
     ): ApiResponse<CheckoutResponse> {
-        val result = checkoutService.checkout(productId = productId, userId = userId)
+        val result = checkoutService.checkout(productOptionId = productOptionId, userId = userId)
         return ApiResponse.success(CheckoutResponse.from(result, userId))
     }
 }

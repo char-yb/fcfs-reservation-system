@@ -5,7 +5,7 @@ import com.reservation.application.fixture.FakePaymentRepository
 import com.reservation.application.payment.PaymentService
 import com.reservation.application.payment.PaymentStrategyRegistry
 import com.reservation.application.payment.PaymentValidator
-import com.reservation.domain.payment.PaymentCommand
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType

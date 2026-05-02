@@ -1,0 +1,8 @@
+ALTER TABLE product_options
+    MODIFY COLUMN price DECIMAL(19, 2) NOT NULL;
+
+ALTER TABLE orders
+    MODIFY COLUMN total_amount DECIMAL(19, 2) NOT NULL;
+
+ALTER TABLE payments
+    MODIFY COLUMN amount DECIMAL(19, 2) NOT NULL;

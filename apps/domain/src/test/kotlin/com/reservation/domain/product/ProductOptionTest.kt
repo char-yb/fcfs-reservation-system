@@ -7,38 +7,36 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 
-class ProductTest :
+class ProductOptionTest :
     StringSpec({
         "판매 시작 시간이 지나면 예약을 허용한다" {
             val now = LocalDateTime.of(2026, 4, 30, 10, 0)
-            val product =
-                Product(
+            val option =
+                ProductOption(
                     id = 1L,
-                    name = "room",
+                    productId = 1L,
+                    name = "standard",
                     price = 100_000L,
-                    checkInAt = now.plusDays(1),
-                    checkOutAt = now.plusDays(2),
                     saleOpenAt = now.minusMinutes(1),
                 )
 
-            product.validateSaleOpen(now)
+            option.validateSaleOpen(now)
         }
 
         "판매 시작 전이면 예약을 거부한다" {
             val now = LocalDateTime.of(2026, 4, 30, 10, 0)
-            val product =
-                Product(
+            val option =
+                ProductOption(
                     id = 1L,
-                    name = "room",
+                    productId = 1L,
+                    name = "standard",
                     price = 100_000L,
-                    checkInAt = now.plusDays(1),
-                    checkOutAt = now.plusDays(2),
                     saleOpenAt = now.plusMinutes(1),
                 )
 
             val exception =
                 shouldThrow<ErrorException> {
-                    product.validateSaleOpen(now)
+                    option.validateSaleOpen(now)
                 }
 
             exception.errorType shouldBe ErrorType.SALE_NOT_OPEN

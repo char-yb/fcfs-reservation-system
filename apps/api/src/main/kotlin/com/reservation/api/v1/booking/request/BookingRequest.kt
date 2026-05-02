@@ -1,26 +1,32 @@
 package com.reservation.api.v1.booking.request
 
 import com.reservation.application.booking.command.BookingCommand
-import com.reservation.domain.payment.PaymentCommand
-import com.reservation.domain.payment.PaymentItem
+import com.reservation.application.payment.command.PaymentCommand
+import com.reservation.support.money.Money
+import java.math.BigDecimal
 
 data class BookingRequest(
-    val productId: Long,
-    val totalAmount: Long,
-    val payments: List<PaymentItem>,
+    val productOptionId: Long,
+    val totalAmount: BigDecimal,
+    val payments: List<PaymentRequestItem>,
 ) {
     fun toCommand(
         userId: Long,
         orderKey: String,
     ): BookingCommand =
         BookingCommand(
-            productId = productId,
+            productOptionId = productOptionId,
             userId = userId,
-            totalAmount = totalAmount,
+            totalAmount = Money(totalAmount),
             orderKey = orderKey,
             payments =
                 payments.map {
-                    PaymentCommand(method = it.method, amount = it.amount, userId = userId, attributes = it.attributes)
+                    PaymentCommand(
+                        method = it.method,
+                        amount = Money(it.amount),
+                        userId = userId,
+                        attributes = it.attributes,
+                    )
                 },
         )
 }

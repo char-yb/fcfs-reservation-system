@@ -5,6 +5,7 @@ import com.reservation.application.fixture.pendingOrder
 import com.reservation.domain.order.OrderStatus
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -17,9 +18,8 @@ class OrderServiceTest :
 
             val order =
                 service.create(
-                    productId = 1L,
                     userId = 2L,
-                    totalAmount = 100_000L,
+                    totalAmount = Money(100_000L),
                     orderKey = "order-key",
                 )
 
@@ -38,9 +38,8 @@ class OrderServiceTest :
             val exception =
                 shouldThrow<ErrorException> {
                     service.create(
-                        productId = 1L,
                         userId = 2L,
-                        totalAmount = 100_000L,
+                        totalAmount = Money(100_000L),
                         orderKey = "order-key",
                     )
                 }

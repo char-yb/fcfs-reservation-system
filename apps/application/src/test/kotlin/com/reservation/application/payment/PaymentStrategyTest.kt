@@ -3,13 +3,14 @@ package com.reservation.application.payment
 import com.reservation.application.fixture.FakeUserPointRepository
 import com.reservation.application.fixture.RecordingPaymentGateway
 import com.reservation.application.fixture.userPoint
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.application.payment.credit.CreditCardPaymentStrategy
 import com.reservation.application.payment.ypay.YPayPaymentStrategy
 import com.reservation.application.user.UserPointService
-import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -32,7 +33,7 @@ class PaymentStrategyTest :
 
             result.method shouldBe PaymentMethod.CREDIT_CARD
             gateway.chargeRequests.single().method shouldBe "CARD"
-            gateway.chargeRequests.single().amount shouldBe 70_000L
+            gateway.chargeRequests.single().amount shouldBe Money(70_000L)
             gateway.chargeRequests.single().token shouldBe "card-token"
         }
 
@@ -63,7 +64,7 @@ class PaymentStrategyTest :
 
             result.method shouldBe PaymentMethod.Y_PAY
             gateway.chargeRequests.single().method shouldBe "Y_PAY"
-            gateway.chargeRequests.single().amount shouldBe 70_000L
+            gateway.chargeRequests.single().amount shouldBe Money(70_000L)
             gateway.chargeRequests.single().token shouldBe "pay-token"
         }
 

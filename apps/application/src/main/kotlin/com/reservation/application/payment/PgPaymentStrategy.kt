@@ -1,10 +1,9 @@
 package com.reservation.application.payment
 
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.domain.payment.CancelResult
-import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentExecutionResult
 import com.reservation.domain.payment.PaymentMethod
-import com.reservation.domain.payment.PaymentStrategy
 import com.reservation.domain.payment.pg.PgChargeRequest
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType

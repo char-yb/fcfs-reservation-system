@@ -1,5 +1,6 @@
 package com.reservation.application.product
 
+import com.reservation.domain.product.BookingProductOption
 import com.reservation.domain.product.Product
 import com.reservation.domain.product.ProductRepository
 import com.reservation.support.error.ErrorException
@@ -17,5 +18,7 @@ class ProductService(
             ?: throw ErrorException(ErrorType.PRODUCT_NOT_FOUND)
 
     @Transactional(readOnly = true)
-    fun getProductAll(): List<Product> = productRepository.findAll()
+    fun getBookingOption(productOptionId: Long): BookingProductOption =
+        productRepository.findBookingOptionById(productOptionId)
+            ?: throw ErrorException(ErrorType.PRODUCT_NOT_FOUND)
 }

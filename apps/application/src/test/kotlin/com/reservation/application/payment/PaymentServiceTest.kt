@@ -8,6 +8,7 @@ import com.reservation.domain.payment.PaymentExecutionResult
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -25,7 +26,7 @@ class PaymentServiceTest :
                             paymentCommand(PaymentMethod.Y_PAY, amount = 70_000),
                             paymentCommand(PaymentMethod.Y_POINT, amount = 30_000),
                         ),
-                    totalAmount = 100_000,
+                    totalAmount = Money(100_000L),
                 )
 
             fixture.events shouldBe listOf("pay:Y_POINT", "pay:Y_PAY")
@@ -44,7 +45,7 @@ class PaymentServiceTest :
                                 paymentCommand(PaymentMethod.Y_PAY, amount = 70_000),
                                 paymentCommand(PaymentMethod.Y_POINT, amount = 30_000),
                             ),
-                        totalAmount = 100_000,
+                        totalAmount = Money(100_000L),
                     )
                 }
 

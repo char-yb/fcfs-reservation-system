@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.product
+package com.reservation.storage.rdb.product.stock
 
 import com.reservation.domain.product.ProductStock
 import jakarta.persistence.Column
@@ -11,23 +11,19 @@ import java.time.LocalDateTime
 @Table(name = "product_stock")
 class ProductStockEntity(
     @Id
-    @Column(name = "product_id")
-    val productId: Long,
+    @Column(name = "product_option_id")
+    val productOptionId: Long,
     @Column(name = "total_quantity", nullable = false)
     val totalQuantity: Int,
     @Column(name = "remaining_quantity", nullable = false)
     var remainingQuantity: Int,
-    // conditional UPDATE(WHERE remaining > 0)로 정합성 보장하므로 @Version 미사용.
-    @Column(name = "version", nullable = false)
-    var version: Long = 0,
     @Column(name = "updated_at", nullable = false)
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
     fun toDomain(): ProductStock =
         ProductStock(
-            productId = productId,
+            productOptionId = productOptionId,
             totalQuantity = totalQuantity,
             remainingQuantity = remainingQuantity,
-            version = version,
         )
 }

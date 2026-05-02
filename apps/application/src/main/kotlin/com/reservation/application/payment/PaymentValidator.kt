@@ -1,15 +1,18 @@
 package com.reservation.application.payment
 
-import com.reservation.domain.payment.PaymentCommand
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import org.springframework.stereotype.Component
 
 @Component
 class PaymentValidator {
     fun validate(commands: List<PaymentCommand>) {
-        if (commands.isEmpty() || commands.any { it.amount <= 0 }) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
+        if (commands.isEmpty() || commands.any { !it.amount.isGreaterThan(Money.ZERO) }) {
+            throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
+        }
 
         val methods = commands.map { it.method }
         if (methods.size != methods.toSet().size) {
@@ -23,8 +26,9 @@ class PaymentValidator {
 
     fun validateTotal(
         commands: List<PaymentCommand>,
-        expectedTotal: Long,
+        expectedTotal: Money,
     ) {
-        if (commands.sumOf { it.amount } != expectedTotal) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
+        val actualTotal = commands.fold(Money.ZERO) { sum, command -> sum + command.amount }
+        if (!actualTotal.isEqualsThan(expectedTotal)) throw ErrorException(ErrorType.PAYMENT_METHOD_INVALID)
     }
 }

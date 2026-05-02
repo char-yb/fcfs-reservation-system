@@ -4,6 +4,7 @@ import com.reservation.application.payment.fixture.paymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
+import com.reservation.support.money.Money
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -20,7 +21,7 @@ class PaymentValidatorTest :
                 )
 
             validator.validate(commands)
-            validator.validateTotal(commands, expectedTotal = 100_000)
+            validator.validateTotal(commands, expectedTotal = Money(100_000L))
         }
 
         "Y 페이와 Y 포인트 조합은 허용한다" {
@@ -31,7 +32,7 @@ class PaymentValidatorTest :
                 )
 
             validator.validate(commands)
-            validator.validateTotal(commands, expectedTotal = 100_000)
+            validator.validateTotal(commands, expectedTotal = Money(100_000L))
         }
 
         "신용카드와 Y 페이 조합은 거부한다" {
@@ -85,7 +86,7 @@ class PaymentValidatorTest :
                 shouldThrow<ErrorException> {
                     validator.validateTotal(
                         commands = listOf(paymentCommand(PaymentMethod.Y_POINT, amount = 10_000)),
-                        expectedTotal = 20_000,
+                        expectedTotal = Money(20_000L),
                     )
                 }
 

@@ -6,11 +6,11 @@ import com.reservation.application.booking.command.BookingCommand
 import com.reservation.application.payment.PaymentService
 import com.reservation.application.payment.PaymentStrategyRegistry
 import com.reservation.application.payment.PaymentValidator
+import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.application.payment.fixture.RecordingPaymentStrategy
 import com.reservation.application.product.ProductService
 import com.reservation.application.product.StockService
 import com.reservation.domain.order.OrderStatus
-import com.reservation.domain.payment.PaymentCommand
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
@@ -18,6 +18,7 @@ import com.reservation.support.error.ErrorType
 data class BookingFacadeFixture(
     val facade: BookingFacade,
     val orderRepository: FakeOrderRepository,
+    val orderProductRepository: FakeOrderProductRepository,
     val stockRepository: FakeProductStockRepository,
     val counterRepository: FakeStockCounterRepository,
     val paymentRepository: FakePaymentRepository,
@@ -59,6 +60,7 @@ fun bookingFacadeFixture(
 
 fun bookingFacadeFixture(
     orderRepository: FakeOrderRepository,
+    orderProductRepository: FakeOrderProductRepository = FakeOrderProductRepository(),
     stockRepository: FakeProductStockRepository,
     counterRepository: FakeStockCounterRepository = FakeStockCounterRepository(initialRemaining = 2L),
     paymentRepository: FakePaymentRepository = FakePaymentRepository(),
@@ -69,7 +71,11 @@ fun bookingFacadeFixture(
 ): BookingFacadeFixture {
     val productService =
         ProductService(
-            productRepository = FakeProductRepository(listOf(openProduct(id = 1L))),
+            productRepository =
+                FakeProductRepository(
+                    initialProducts = listOf(openProduct(id = 1L)),
+                    initialBookingOptions = listOf(openBookingOption(id = 1L, productId = 1L)),
+                ),
         )
     val strategies =
         PaymentMethod.entries.map { method ->
@@ -97,6 +103,7 @@ fun bookingFacadeFixture(
                 BookingReservationProcessor(
                     productStockRepository = stockRepository,
                     orderRepository = orderRepository,
+                    orderProductRepository = orderProductRepository,
                 ),
             paymentService =
                 PaymentService(
@@ -115,6 +122,7 @@ fun bookingFacadeFixture(
     return BookingFacadeFixture(
         facade = facade,
         orderRepository = orderRepository,
+        orderProductRepository = orderProductRepository,
         stockRepository = stockRepository,
         counterRepository = counterRepository,
         paymentRepository = paymentRepository,
@@ -124,14 +132,14 @@ fun bookingFacadeFixture(
 }
 
 fun bookingCommand(
-    productId: Long = 1L,
+    productOptionId: Long = 1L,
     userId: Long = 2L,
     totalAmount: Long = 100_000L,
     orderKey: String = "order-key",
     payments: List<PaymentCommand> = emptyList(),
 ): BookingCommand =
     BookingCommand(
-        productId = productId,
+        productOptionId = productOptionId,
         userId = userId,
         totalAmount = totalAmount,
         orderKey = orderKey,

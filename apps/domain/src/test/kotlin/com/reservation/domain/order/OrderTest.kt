@@ -12,7 +12,6 @@ class OrderTest :
             val order =
                 Order(
                     id = 1L,
-                    productId = 10L,
                     userId = 20L,
                     totalAmount = 100_000L,
                     status = OrderStatus.PENDING,
@@ -26,7 +25,6 @@ class OrderTest :
             val order =
                 Order(
                     id = 1L,
-                    productId = 10L,
                     userId = 20L,
                     totalAmount = 100_000L,
                     status = OrderStatus.PAID,
@@ -40,7 +38,6 @@ class OrderTest :
             val order =
                 Order(
                     id = 1L,
-                    productId = 10L,
                     userId = 20L,
                     totalAmount = 100_000L,
                     status = OrderStatus.CONFIRMED,

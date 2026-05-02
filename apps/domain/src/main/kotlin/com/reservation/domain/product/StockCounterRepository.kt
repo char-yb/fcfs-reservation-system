@@ -1,12 +1,12 @@
 package com.reservation.domain.product
 
 interface StockCounterRepository {
-    fun decrement(productId: Long): Long
+    fun decrement(productOptionId: Long): Long
 
-    fun increment(productId: Long)
+    fun increment(productOptionId: Long)
 
     fun initialize(
-        productId: Long,
+        productOptionId: Long,
         quantity: Int,
     )
 }
