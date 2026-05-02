@@ -1,7 +1,7 @@
 package com.reservation.application.user
 
 import com.reservation.application.fixture.FakeUserPointRepository
-import com.reservation.domain.user.UserPoint
+import com.reservation.application.fixture.userPoint
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import io.kotest.assertions.throwables.shouldThrow
@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldBe
 class UserPointServiceTest :
     StringSpec({
         "사용자 포인트를 조회한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 10_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 10_000L)))
             val service = UserPointService(repository)
 
             service.getPoint(1L).pointBalance shouldBe 10_000L
@@ -29,7 +29,7 @@ class UserPointServiceTest :
         }
 
         "포인트를 충전한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 10_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 10_000L)))
             val service = UserPointService(repository)
 
             service.charge(userId = 1L, amount = 5_000L).pointBalance shouldBe 15_000L
@@ -43,7 +43,7 @@ class UserPointServiceTest :
         }
 
         "포인트를 차감하고 거래 식별자를 반환한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 10_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 10_000L)))
             val service = UserPointService(repository)
 
             val transactionId = service.deduct(userId = 1L, amount = 7_000L)
@@ -64,7 +64,7 @@ class UserPointServiceTest :
         }
 
         "포인트 거래 식별자로 환불한다" {
-            val repository = FakeUserPointRepository(listOf(UserPoint(userId = 1L, pointBalance = 3_000L)))
+            val repository = FakeUserPointRepository(listOf(userPoint(pointBalance = 3_000L)))
             val service = UserPointService(repository)
 
             service.refund("pt_1_7000_uuid")

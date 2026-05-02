@@ -4,12 +4,4 @@ data class ErrorResponse(
     val code: String,
     val message: String,
     val orderId: Long? = null,
-) {
-    companion object {
-        fun of(
-            code: String,
-            message: String,
-            orderId: Long? = null,
-        ) = ErrorResponse(code = code, message = message, orderId = orderId)
-    }
-}
+)

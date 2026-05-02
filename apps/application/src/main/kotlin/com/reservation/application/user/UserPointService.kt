@@ -39,25 +39,17 @@ class UserPointService(
                 ?: throw ErrorException(ErrorType.USER_NOT_FOUND)
         val deducted = userPoint.deduct(amount)
         userPointRepository.save(deducted)
-        return buildTransactionId(userId, amount)
+        return "pt_${userId}_${amount}_${UUID.randomUUID()}"
     }
 
     @Transactional
     fun refund(transactionId: String) {
-        val (userId, amount) = parseTransactionId(transactionId)
+        val parts = transactionId.split("_")
+        val userId = parts[1].toLong()
+        val amount = parts[2].toLong()
         val userPoint =
             userPointRepository.findByUserId(userId)
                 ?: throw ErrorException(ErrorType.USER_NOT_FOUND)
         userPointRepository.save(userPoint.refund(amount))
-    }
-
-    private fun buildTransactionId(
-        userId: Long,
-        amount: Long,
-    ): String = "pt_${userId}_${amount}_${UUID.randomUUID()}"
-
-    private fun parseTransactionId(txId: String): Pair<Long, Long> {
-        val parts = txId.split("_")
-        return Pair(parts[1].toLong(), parts[2].toLong())
     }
 }

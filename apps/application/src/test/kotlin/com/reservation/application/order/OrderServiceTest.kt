@@ -1,7 +1,7 @@
 package com.reservation.application.order
 
 import com.reservation.application.fixture.FakeOrderRepository
-import com.reservation.domain.order.Order
+import com.reservation.application.fixture.pendingOrder
 import com.reservation.domain.order.OrderStatus
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
@@ -31,16 +31,7 @@ class OrderServiceTest :
         "같은 주문 키가 있으면 중복 요청으로 거부한다" {
             val repository =
                 FakeOrderRepository(
-                    listOf(
-                        Order(
-                            id = 1L,
-                            productId = 1L,
-                            userId = 2L,
-                            totalAmount = 100_000L,
-                            status = OrderStatus.PENDING,
-                            orderKey = "order-key",
-                        ),
-                    ),
+                    listOf(pendingOrder()),
                 )
             val service = OrderService(repository)
 
@@ -60,16 +51,7 @@ class OrderServiceTest :
         "주문을 확정 상태로 변경한다" {
             val repository =
                 FakeOrderRepository(
-                    listOf(
-                        Order(
-                            id = 1L,
-                            productId = 1L,
-                            userId = 2L,
-                            totalAmount = 100_000L,
-                            status = OrderStatus.PENDING,
-                            orderKey = "order-key",
-                        ),
-                    ),
+                    listOf(pendingOrder()),
                 )
             val service = OrderService(repository)
 
@@ -79,16 +61,7 @@ class OrderServiceTest :
         "주문을 실패 상태로 변경한다" {
             val repository =
                 FakeOrderRepository(
-                    listOf(
-                        Order(
-                            id = 1L,
-                            productId = 1L,
-                            userId = 2L,
-                            totalAmount = 100_000L,
-                            status = OrderStatus.PENDING,
-                            orderKey = "order-key",
-                        ),
-                    ),
+                    listOf(pendingOrder()),
                 )
             val service = OrderService(repository)
 

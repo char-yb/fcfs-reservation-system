@@ -14,10 +14,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice
 
 @RestControllerAdvice(basePackages = ["com.reservation.api"])
 class ApiResponseAdvice : ResponseBodyAdvice<Any> {
-    companion object {
-        private val excludeUrls = listOf("/actuator/prometheus")
-    }
-
     override fun supports(
         returnType: MethodParameter,
         converterType: Class<out HttpMessageConverter<*>>,
@@ -35,7 +31,7 @@ class ApiResponseAdvice : ResponseBodyAdvice<Any> {
         val status = servletResponse.status
         val resolve = HttpStatus.resolve(status)
 
-        if (excludeUrls.contains(request.uri.path)) {
+        if (request.uri.path == "/actuator/prometheus") {
             return body
         }
 
