@@ -164,4 +164,15 @@ k6 run k6/scenarios/payment-failure.js
 
 그 외 응답은 `booking_unexpected_response_rate`에 집계되며 조사 대상이다.
 
+## 최근 로컬 측정 결과
+
+로컬 Docker Compose 환경에서 API 컨테이너를 재빌드한 뒤 다음 결과를 확인했다. `booking-spike.js`는 50 TPS warm-up, 1초 ramp-up, 5분 peak 유지, 30초 cooldown을 포함하므로 전체 `http_reqs rate`는 peak TPS보다 낮게 나온다.
+
+| 실행 시각 | peak TPS | iterations | 전체 평균 http_reqs/s | 성공 예약 | 정상 매진 | 기타 expected fail | unexpected | dropped | http failed | p95 | p99 | max |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2026-05-03 00:06 KST | 500 | 160,774 | 411.17/s | 10 | 160,764 | 0 | 0.00% | 0 | 0.00% | 4.285ms | 14.451ms | 497.176ms |
+| 2026-05-03 00:12 KST | 1000 | 318,524 | 814.61/s | 10 | 318,514 | 0 | 0.00% | 0 | 0.00% | 3.275ms | 21.827ms | 1009.912ms |
+
+두 실행 모두 `verify-local-invariants.sh` 결과는 `confirmed_orders=10`, `failed_orders=0`, `pending_orders=0`, `db_remaining=0`, `expected_remaining=0`, `redis_stock=0`이었다.
+
 자세한 실행 절차와 장애 드릴은 `k6/RUNBOOK.md`를 참고한다.
