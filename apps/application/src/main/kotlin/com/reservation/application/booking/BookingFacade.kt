@@ -22,7 +22,7 @@ class BookingFacade(
         val bookingOption = productService.getBookingOption(command.productOptionId)
         bookingOption.validateSaleOpen()
 
-        return stockService.executeWithStockGuard(command.productOptionId) {
+        return stockService.executeWithStockReservation(command.productOptionId) {
             val order = bookingReservationProcessor.reserve(command, bookingOption)
             var paymentResults = emptyList<PaymentExecutionResult>()
             try {
@@ -41,7 +41,7 @@ class BookingFacade(
                 }.onFailure { recoveryFailure ->
                     log.error(recoveryFailure) { "예약 실패 후 DB 복구 실패 orderId=${order.id}" }
                 }
-                // L1 카운터 복구는 StockService.executeWithStockGuard 의 outer catch가 담당한다.
+                // L1 카운터 복구는 StockService.executeWithStockReservation 의 outer catch가 담당한다.
                 throw e
             }
         }

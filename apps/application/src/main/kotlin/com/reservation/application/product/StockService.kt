@@ -32,18 +32,19 @@ class StockService(
     }
 
     /**
-     * L1(Redis counter) + L2(distributed lock) 재고 보호 실행.
+     * L1(Redis counter) + L2(distributed lock) 재고 예약 흐름 실행.
      * Redis adapter가 장애 또는 circuit open 상태를 RedisUnavailableException으로 변환하면
-     * L1/L2를 건너뛰고 action을 DB-only fallback으로 실행한다.
+     * L1/L2를 건너뛰고 fallbackAction을 DB-only fallback으로 실행한다.
+     * 단일 action 오버로드는 Redis 장애가 action 시작 전에 확인된 경우 동일 예약 흐름을 DB-only로 실행한다.
      * action 내부 또는 lock 획득 실패 시 발생하는 모든 예외에서 L1 카운터를 복구한다.
      * L3(DB) 롤백은 호출자가 action 내에서 직접 처리한다.
      */
-    fun <T> executeWithStockGuard(
+    fun <T> executeWithStockReservation(
         productOptionId: Long,
         action: () -> T,
-    ): T = executeWithStockGuard(productOptionId = productOptionId, action = action, fallbackAction = action)
+    ): T = executeWithStockReservation(productOptionId = productOptionId, action = action, fallbackAction = action)
 
-    fun <T> executeWithStockGuard(
+    fun <T> executeWithStockReservation(
         productOptionId: Long,
         action: () -> T,
         fallbackAction: () -> T,

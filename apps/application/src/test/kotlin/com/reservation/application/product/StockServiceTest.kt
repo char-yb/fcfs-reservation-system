@@ -64,7 +64,7 @@ class StockServiceTest :
             val distributedLock = RecordingDistributedLock()
             val service = StockService(stockRepository, counterRepository, distributedLock)
 
-            val result = service.executeWithStockGuard(productOptionId = 1L) { "reserved" }
+            val result = service.executeWithStockReservation(productOptionId = 1L) { "reserved" }
 
             result shouldBe "reserved"
             counterRepository.remaining shouldBe 1L
@@ -80,7 +80,7 @@ class StockServiceTest :
 
             val exception =
                 shouldThrow<ErrorException> {
-                    service.executeWithStockGuard(
+                    service.executeWithStockReservation(
                         productOptionId = 1L,
                         action = { "reserved" },
                         fallbackAction = {
@@ -101,7 +101,7 @@ class StockServiceTest :
             val service = StockService(FakeProductStockRepository(), counterRepository, RecordingDistributedLock())
 
             shouldThrow<IllegalStateException> {
-                service.executeWithStockGuard(productOptionId = 1L) {
+                service.executeWithStockReservation(productOptionId = 1L) {
                     throw IllegalStateException("failed")
                 }
             }
@@ -121,7 +121,7 @@ class StockServiceTest :
             var primaryExecuted = false
 
             val result =
-                service.executeWithStockGuard(
+                service.executeWithStockReservation(
                     productOptionId = 1L,
                     action = {
                         primaryExecuted = true
@@ -142,7 +142,7 @@ class StockServiceTest :
             val service = StockService(FakeProductStockRepository(), counterRepository, distributedLock)
 
             val result =
-                service.executeWithStockGuard(
+                service.executeWithStockReservation(
                     productOptionId = 1L,
                     action = { "primary" },
                     fallbackAction = { "fallback" },
@@ -166,7 +166,7 @@ class StockServiceTest :
 
             val exception =
                 shouldThrow<ErrorException> {
-                    service.executeWithStockGuard(
+                    service.executeWithStockReservation(
                         productOptionId = 1L,
                         action = { "primary" },
                         fallbackAction = {
