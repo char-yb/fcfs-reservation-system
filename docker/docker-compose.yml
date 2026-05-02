@@ -46,7 +46,7 @@ services:
       - ../.env
     environment:
       TZ: Asia/Seoul
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: prod,local-seed
     ports:
       - "8080:8080"
     depends_on:

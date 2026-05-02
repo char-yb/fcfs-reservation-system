@@ -1,0 +1,46 @@
+redis:
+  reservation:
+    command-timeout-ms: 200
+    connect-timeout-ms: 1000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      redis:
+        # 예약 1건은 Redis counter + distributed lock으로 최소 2 Redis ops를 사용한다.
+        # 인스턴스당 100 booking TPS를 기준으로 보면 약 200 Redis ops/s이고, 100개 표본은 약 0.5초 분량이라 장애 감지는 빠르되 1~2회 timeout으로 circuit이 열리지 않는다.
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        # 100 TPS 기준 약 0.1초 분량의 20 Redis ops가 쌓인 뒤부터 평가한다. Redis 완전 장애는 빠르게 열고, 저 TPS 환경에서도 과도한 지연 없이 판별한다.
+        minimum-number-of-calls: 20
+        # 표본의 절반 이상이 실패하면 DB-only fallback으로 전환한다. Redis 순간 오류 1~2건은 흡수하되, 장애가 실제 요청 절반을 넘으면 빠르게 우회한다.
+        failure-rate-threshold: 50
+        # OPEN 상태에서는 Redis 재시도를 요청마다 반복하지 않고 5초 동안 DB 정합성 경로로 흘린다. 너무 길게 잡으면 Redis 회복 후에도 DB 부하가 오래 지속된다.
+        wait-duration-in-open-state: 5s
+        # HALF_OPEN은 10개 Redis 호출만 통과시켜 회복 여부를 확인한다. 100 TPS 기준 약 50ms 분량이라 회복 판단이 빠르고 Redis 재가열 부하도 제한된다.
+        permitted-number-of-calls-in-half-open-state: 10
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - org.redisson.client.RedisException
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+redis:
+  reservation:
+    host: localhost
+    port: 6379
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+redis:
+  reservation:
+    host: ${REDIS_RESERVATION_HOST}
+    port: ${REDIS_RESERVATION_PORT:6379}

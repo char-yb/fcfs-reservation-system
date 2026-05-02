@@ -89,7 +89,7 @@ INSERT INTO products (
     deleted_at
 ) VALUES (
     @product_id,
-    'K6 Midnight Room',
+    '제주 오션뷰 10실 한정 초특가 숙박권',
     'BOOKING',
     NOW(3),
     NULL,
@@ -108,7 +108,7 @@ INSERT INTO product_options (
 ) VALUES (
     @product_option_id,
     @product_id,
-    'Standard',
+    '오션뷰 더블룸 선착순 10실',
     @product_price,
     '2000-01-01 00:00:00.000',
     NOW(3),

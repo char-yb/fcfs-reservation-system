@@ -1,0 +1,71 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 100
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  flyway:
+    baseline-on-migrate: false
+
+datasource:
+  reservation:
+    driver-class-name: org.h2.Driver
+    jdbc-url: jdbc:h2:mem:fcfs;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=USER
+    username: sa
+    password:
+    pool-name: reservation-local-pool
+    maximum-pool-size: 10
+    connection-timeout: 3000
+    validation-timeout: 1000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  flyway:
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    clean-disabled: true
+
+datasource:
+  reservation:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    jdbc-url: ${DATASOURCE_RESERVATION_JDBC_URL}
+    username: ${DATASOURCE_RESERVATION_USERNAME}
+    password: ${DATASOURCE_RESERVATION_PASSWORD}
+    pool-name: reservation-pool
+    maximum-pool-size: 30
+    minimum-idle: 5
+    connection-timeout: 3000
+    validation-timeout: 1000
+    keepalive-time: 30000
+    max-lifetime: 1800000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local-seed
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/seed/local
