@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.common
+package com.reservation.storage.rdb.common.outbox
 
 import com.reservation.domain.outbox.OutboxEvent
 import com.reservation.domain.outbox.OutboxEventRepository

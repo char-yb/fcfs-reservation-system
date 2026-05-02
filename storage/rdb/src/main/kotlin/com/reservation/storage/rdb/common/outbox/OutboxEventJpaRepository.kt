@@ -1,4 +1,4 @@
-package com.reservation.storage.rdb.common
+package com.reservation.storage.rdb.common.outbox
 
 import org.springframework.data.jpa.repository.JpaRepository
 
