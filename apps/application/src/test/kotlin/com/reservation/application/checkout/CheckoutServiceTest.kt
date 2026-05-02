@@ -4,12 +4,14 @@ import com.reservation.application.fixture.FakeProductRepository
 import com.reservation.application.fixture.FakeProductStockRepository
 import com.reservation.application.fixture.FakeStockCounterRepository
 import com.reservation.application.fixture.FakeUserPointRepository
+import com.reservation.application.fixture.RecordingDistributedLock
 import com.reservation.application.fixture.openProduct
+import com.reservation.application.fixture.productStock
+import com.reservation.application.fixture.userPoint
 import com.reservation.application.product.ProductService
+import com.reservation.application.product.StockService
 import com.reservation.application.user.UserPointService
 import com.reservation.domain.product.Product
-import com.reservation.domain.product.ProductStock
-import com.reservation.domain.user.UserPoint
 import com.reservation.support.error.ErrorException
 import com.reservation.support.error.ErrorType
 import io.kotest.assertions.throwables.shouldThrow
@@ -21,24 +23,28 @@ class CheckoutServiceTest :
     StringSpec({
         "체크아웃에 상품과 재고와 사용자 포인트를 반환한다" {
             val product = openProduct(id = 1L)
-            val stock = ProductStock(productId = 1L, totalQuantity = 10, remainingQuantity = 7, version = 0L)
-            val userPoint = UserPoint(userId = 2L, pointBalance = 30_000L)
+            val stock = productStock(remainingQuantity = 7)
+            val point = userPoint(userId = 2L, pointBalance = 30_000L)
             val service =
                 CheckoutService(
                     productService =
                         ProductService(
                             productRepository = FakeProductRepository(listOf(product)),
+                        ),
+                    stockService =
+                        StockService(
                             productStockRepository = FakeProductStockRepository(listOf(stock)),
                             stockCounterRepository = FakeStockCounterRepository(),
+                            distributedLock = RecordingDistributedLock(),
                         ),
-                    userPointService = UserPointService(FakeUserPointRepository(listOf(userPoint))),
+                    userPointService = UserPointService(FakeUserPointRepository(listOf(point))),
                 )
 
             val result = service.checkout(productId = 1L, userId = 2L)
 
             result.product shouldBe product
             result.stock shouldBe stock
-            result.userPoint shouldBe userPoint
+            result.userPoint shouldBe point
         }
 
         "판매 시작 전 상품은 체크아웃을 거부한다" {
@@ -57,8 +63,12 @@ class CheckoutServiceTest :
                     productService =
                         ProductService(
                             productRepository = FakeProductRepository(listOf(product)),
+                        ),
+                    stockService =
+                        StockService(
                             productStockRepository = FakeProductStockRepository(),
                             stockCounterRepository = FakeStockCounterRepository(),
+                            distributedLock = RecordingDistributedLock(),
                         ),
                     userPointService = UserPointService(FakeUserPointRepository()),
                 )

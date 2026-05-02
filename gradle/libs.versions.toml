@@ -7,6 +7,7 @@ ktlint-core = "1.5.0"
 kotlin-logging = "7.0.3"
 kotest = "6.1.7"
 redisson = "3.45.1"
+resilience4j = "2.4.0"
 testcontainers = "2.0.5"
 jacoco = "0.8.13"
 
@@ -22,6 +23,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-actuator-test = { module = "org.springframework.boot:spring-boot-starter-actuator-test" }
+spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-data-jpa-test = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test" }
 spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
@@ -37,6 +39,7 @@ flyway-mysql = { module = "org.flywaydb:flyway-mysql" }
 h2 = { module = "com.h2database:h2" }
 mysql-connector-j = { module = "com.mysql:mysql-connector-j" }
 redisson = { module = "org.redisson:redisson", version.ref = "redisson" }
+resilience4j-spring-boot4 = { module = "io.github.resilience4j:resilience4j-spring-boot4", version.ref = "resilience4j" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 
 [plugins]

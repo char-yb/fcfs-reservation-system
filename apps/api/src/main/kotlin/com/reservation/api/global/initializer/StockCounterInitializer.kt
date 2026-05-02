@@ -1,6 +1,7 @@
 package com.reservation.api.global.initializer
 
 import com.reservation.application.product.ProductService
+import com.reservation.application.product.StockService
 import com.reservation.support.extension.logger
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Component
 @Component
 class StockCounterInitializer(
     private val productService: ProductService,
+    private val stockService: StockService,
 ) {
     private val log by logger()
 
@@ -46,7 +48,7 @@ class StockCounterInitializer(
         var failed = 0
         products.forEach { product ->
             runCatching {
-                productService.initializeStockCounter(product.id)
+                stockService.initializeStockCounter(product.id)
             }.onSuccess {
                 success += 1
             }.onFailure { ex ->

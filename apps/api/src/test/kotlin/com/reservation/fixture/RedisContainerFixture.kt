@@ -4,7 +4,7 @@ import org.springframework.test.context.DynamicPropertyRegistry
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.utility.DockerImageName
 
-internal object RedisContainerFixture {
+object RedisContainerFixture {
     private const val REDIS_PORT = 6379
 
     private val redisContainer =

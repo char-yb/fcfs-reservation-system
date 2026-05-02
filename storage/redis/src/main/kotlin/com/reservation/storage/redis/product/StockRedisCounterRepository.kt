@@ -1,6 +1,7 @@
 package com.reservation.storage.redis.product
 
 import com.reservation.domain.product.StockCounterRepository
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker
 import org.redisson.api.RedissonClient
 import org.springframework.stereotype.Repository
 
@@ -8,12 +9,15 @@ import org.springframework.stereotype.Repository
 class StockRedisCounterRepository(
     private val redissonClient: RedissonClient,
 ) : StockCounterRepository {
+    @CircuitBreaker(name = "redis")
     override fun decrement(productId: Long): Long = redissonClient.getAtomicLong(stockKey(productId)).decrementAndGet()
 
+    @CircuitBreaker(name = "redis")
     override fun increment(productId: Long) {
         redissonClient.getAtomicLong(stockKey(productId)).incrementAndGet()
     }
 
+    @CircuitBreaker(name = "redis")
     override fun initialize(
         productId: Long,
         quantity: Int,

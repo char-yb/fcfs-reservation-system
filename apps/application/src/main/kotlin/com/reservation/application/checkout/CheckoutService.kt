@@ -2,6 +2,7 @@ package com.reservation.application.checkout
 
 import com.reservation.application.checkout.result.CheckoutResult
 import com.reservation.application.product.ProductService
+import com.reservation.application.product.StockService
 import com.reservation.application.user.UserPointService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class CheckoutService(
     private val productService: ProductService,
+    private val stockService: StockService,
     private val userPointService: UserPointService,
 ) {
     @Transactional(readOnly = true)
@@ -18,7 +20,7 @@ class CheckoutService(
     ): CheckoutResult {
         val product = productService.getProduct(productId)
         product.validateSaleOpen()
-        val stock = productService.getStock(productId)
+        val stock = stockService.getStock(productId)
         val userPoint = userPointService.getPoint(userId)
         return CheckoutResult(product = product, stock = stock, userPoint = userPoint)
     }

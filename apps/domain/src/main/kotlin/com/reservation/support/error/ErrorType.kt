@@ -39,4 +39,5 @@ enum class ErrorType(
 
     /** Infrastructure */
     LOCK_ACQUISITION_FAILED(503, ErrorKind.SERVER_ERROR, "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해주세요.", ErrorLevel.WARN),
+    REDIS_UNAVAILABLE(503, ErrorKind.SERVER_ERROR, "일시적으로 처리할 수 없습니다. 잠시 후 다시 시도해주세요.", ErrorLevel.WARN),
 }
