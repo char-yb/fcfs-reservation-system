@@ -1,5 +1,6 @@
-package com.reservation.application.payment
+package com.reservation.application.payment.ypoint
 
+import com.reservation.application.payment.PaymentStrategy
 import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.application.user.UserPointService
 import com.reservation.domain.payment.CancelResult

@@ -6,6 +6,7 @@ import com.reservation.application.fixture.userPoint
 import com.reservation.application.payment.command.PaymentCommand
 import com.reservation.application.payment.credit.CreditCardPaymentStrategy
 import com.reservation.application.payment.ypay.YPayPaymentStrategy
+import com.reservation.application.payment.ypoint.YPointPaymentStrategy
 import com.reservation.application.user.UserPointService
 import com.reservation.domain.payment.PaymentMethod
 import com.reservation.support.error.ErrorException
