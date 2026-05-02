@@ -16,7 +16,7 @@
 | lock 획득 실패 | `LOCK_ACQUISITION_FAILED` 반환. Redis 장애 fallback 대상 아님 |
 | 외부 PG 명시적 실패 | 성공 결제 역순 cancel, 주문 FAILED, DB/Redis 재고 복구 |
 | 보상 실패 | `outbox_events`에 `COMPENSATION_FAILURE` 기록 |
-| API 서버가 결제 중 죽음 | PENDING 주문과 재고 차감이 남을 수 있음. 운영 reconciliation 필요 |
+| API 서버가 결제 중 죽음 | PENDING 주문과 재고 차감이 남을 수 있음. 운영용 미완료 주문 복구 필요 |
 
 현재 구현은 모든 장애를 자동 복구하지 않는다. 핵심 흐름에서는 오버셀링 방지와 보상 가능한 상태 기록을 우선한다.
 
@@ -173,7 +173,8 @@ Redis fallback에서는 공정성과 처리량이 약해진다. 대신 DB `UPDAT
 | 주문 `PENDING`, DB 재고 차감 | 결제 결과 불명 | 재고 누수 + 결제 불명 |
 | 주문 `PENDING`, DB 재고 차감 | 결제 성공 | 결제 성공 + 주문 미확정 |
 
-현재 구현은 이 케이스를 자동 reconciliation 하지 않는다. 운영 도입 시에는 오래된 `PENDING` 주문과 PG 결제 결과를 대조하는 worker 또는 운영 스크립트가 필요하다.
+현재 구현은 이 케이스를 자동 복구하지 않는다. 운영 도입 시에는 오래된 `PENDING` 주문과 PG 결제 결과를 대조하는 worker 또는 운영 스크립트가 필요하다.
+장기 개선 방향은 [`06-long-term-roadmap.md`](./06-long-term-roadmap.md)의 Phase 1에서 추적한다.
 
 ### 6.2 lock 보유 중 서버 종료
 
@@ -216,15 +217,15 @@ Redis fallback 경로에서 확정 주문이 발생하면 일시적으로 Redis 
 | `BookingReservationProcessorTest` | DB 재고 차감 + PENDING 주문 생성, 실패/확정 조건부 상태 전이 |
 | `PaymentServiceTest` | Y_POINT 우선 실행, 역순 보상, 보상 실패 outbox 기록 |
 | `BookingFacadeTest` | 예약 성공, 결제 실패 보상, Redis fallback 후 결제 실패 시 counter 미복구 |
-| k6 + invariant script | 500/1000 TPS 후 DB/Redis 정합성 |
+| k6 + 정합성 검증 스크립트 | 500/1000 TPS 후 DB/Redis 정합성 |
 
 최근 로컬 booking spike 결과는 다음과 같다.
 
-| peak TPS | 성공 예약 | 정상 매진 | 기타 expected fail | unexpected | dropped | p95 | p99 | 사후 invariant |
+| peak TPS | 성공 예약 | 정상 매진 | 기타 expected fail | unexpected | dropped | p95 | p99 | 사후 정합성 검증 |
 |---:|---:|---:|---:|---:|---:|---:|---:|---|
 | 500 | 10 | 160,764 | 0 | 0.00% | 0 | 4.285ms | 14.451ms | 통과 |
 | 1000 | 10 | 318,514 | 0 | 0.00% | 0 | 3.275ms | 21.827ms | 통과 |
 
-사후 invariant는 두 실행 모두 `confirmed_orders=10`, `pending_orders=0`, `db_remaining=0`, `redis_stock=0`이었다. 장애 대응 관점에서 중요한 점은 실패 응답이 애플리케이션 예외나 lock timeout으로 새지 않고, 매진이라는 제어된 결과로 수렴했다는 것이다.
+사후 정합성 검증은 두 실행 모두 `confirmed_orders=10`, `pending_orders=0`, `db_remaining=0`, `redis_stock=0`이었다. 장애 대응 관점에서 중요한 점은 실패 응답이 애플리케이션 예외나 lock timeout으로 새지 않고, 매진이라는 제어된 결과로 수렴했다는 것이다.
 
 실행 절차는 [`05-runbook-and-validation.md`](./05-runbook-and-validation.md)를 따른다.

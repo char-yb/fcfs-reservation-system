@@ -21,6 +21,7 @@
 - [동시성/락 전략](docs/02-concurrency-and-locking.md)
 - [결제 확장성](docs/03-payment-extensibility.md)
 - [장애 대응/보상](docs/04-fault-tolerance.md)
+- [장기 개선 계획](docs/06-long-term-roadmap.md)
 - [주요 의사결정](docs/DECISIONS.md)
 - [k6 부하테스트](k6/README.md)
 
@@ -637,7 +638,7 @@ k6 run --summary-export k6/results/booking-1000.json k6/scenarios/booking-spike.
 | 2026-05-03 00:06 KST | 500 | 160,774 | 10 | 160,764 | 0 | 0.00% | 0 | 0.00% | 4.285ms | 14.451ms | 497.176ms |
 | 2026-05-03 00:12 KST | 1000 | 318,524 | 10 | 318,514 | 0 | 0.00% | 0 | 0.00% | 3.275ms | 21.827ms | 1009.912ms |
 
-두 실행 모두 사후 invariant 검증 결과가 같았습니다.
+두 실행 모두 사후 정합성 검증 결과가 같았습니다.
 
 ```text
 confirmed_orders=10

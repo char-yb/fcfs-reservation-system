@@ -190,11 +190,11 @@ k6 검증의 핵심 지표는 확정 주문 수, DB 잔여 재고, Redis counter
 
 최근 로컬 실행에서는 다음 결과를 확인했다.
 
-| 실행 시각 | peak TPS | iterations | 성공 예약 | 정상 매진 | 기타 expected fail | unexpected | dropped | p95 | p99 | invariant |
+| 실행 시각 | peak TPS | iterations | 성공 예약 | 정상 매진 | 기타 expected fail | unexpected | dropped | p95 | p99 | 정합성 검증 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | 2026-05-03 00:06 KST | 500 | 160,774 | 10 | 160,764 | 0 | 0.00% | 0 | 4.285ms | 14.451ms | 통과 |
 | 2026-05-03 00:12 KST | 1000 | 318,524 | 10 | 318,514 | 0 | 0.00% | 0 | 3.275ms | 21.827ms | 통과 |
 
-두 실행의 사후 invariant는 `confirmed_orders=10`, `pending_orders=0`, `db_remaining=0`, `expected_remaining=0`, `redis_stock=0`이었다. 즉 500/1000 TPS 피크 모두에서 확정 주문은 재고 10개로 제한되고, 매진 이후 요청은 Redis Lua counter 단계에서 정상 매진으로 분류되었다.
+두 실행의 사후 정합성 검증 결과는 `confirmed_orders=10`, `pending_orders=0`, `db_remaining=0`, `expected_remaining=0`, `redis_stock=0`이었다. 즉 500/1000 TPS 피크 모두에서 확정 주문은 재고 10개로 제한되고, 매진 이후 요청은 Redis Lua counter 단계에서 정상 매진으로 분류되었다.
 
-`booking-spike.js`는 50 TPS warm-up, 1초 ramp-up, 5분 peak 유지, 30초 cooldown을 포함한다. 따라서 k6 summary의 전체 `http_reqs rate`는 peak TPS보다 낮게 보이며, 용량 판단은 peak stage threshold, `dropped_iterations`, unexpected response, 사후 invariant를 함께 본다.
+`booking-spike.js`는 50 TPS warm-up, 1초 ramp-up, 5분 peak 유지, 30초 cooldown을 포함한다. 따라서 k6 summary의 전체 `http_reqs rate`는 peak TPS보다 낮게 보이며, 용량 판단은 peak stage threshold, `dropped_iterations`, unexpected response, 사후 정합성 검증을 함께 본다.

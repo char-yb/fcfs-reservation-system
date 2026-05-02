@@ -75,7 +75,7 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 | `k6/scenarios/idempotency-race.js` | `raceTps`, `duration` |
 | `k6/scenarios/payment-failure.js` | `failureTps`, `duration` |
 | `k6/scripts/reset-local-data.sh` | `product_id`, `product_option_id`, `stock`, `user_count`, MySQL/Redis 컨테이너 값 |
-| `k6/scripts/verify-local-invariants.sh` | `product_option_id`, MySQL/Redis 컨테이너 값 |
+| `k6/scripts/verify-local-invariants.sh` | `product_option_id`, MySQL/Redis 컨테이너 값. 부하테스트 후 DB/Redis 정합성을 확인한다. |
 
 예를 들어 500 TPS를 검증하려면 `k6/scenarios/booking-spike.js`의 `peakTps`를 `500`으로 바꾼 뒤 실행한다.
 1000 TPS를 검증하려면 같은 값을 `1000`으로 바꾼다.

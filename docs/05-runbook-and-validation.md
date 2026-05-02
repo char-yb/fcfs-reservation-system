@@ -338,7 +338,7 @@ k6 Booking 시나리오는 다음 응답을 expected response로 본다.
 | `402 PAYMENT_DECLINED` | 결제 거절 |
 | `503 LOCK_ACQUISITION_FAILED` | lock 획득 실패 |
 
-`booking_unexpected_response_rate`가 0에 가까워야 한다. 정합성 판단은 k6 성공률보다 DB/Redis invariant를 우선한다.
+`booking_unexpected_response_rate`가 0에 가까워야 한다. 정합성 판단은 k6 성공률보다 DB/Redis 정합성 검증 결과를 우선한다.
 
 ---
 
