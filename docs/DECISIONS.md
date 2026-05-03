@@ -482,7 +482,7 @@ Spring WebFlux도 채택하지 않았다. 현재 병목은 reactive programming 
 | 제외 항목 | 제외 이유 | 운영 도입 시 필요 조건 |
 |---|---|---|
 | 실제 PG 연동 | 현재는 mock PG로 결제 전략과 보상 구조 검증 | PG idempotency key, timeout, 결과 조회 API |
-| 오래된 PENDING 주문 복구 worker/API | PG 승인 여부와 포인트 차감 여부를 대조하는 기준이 아직 없음 | 스케줄러/worker, PG 결과 조회, 포인트 ledger, 관리자 알림 |
+| 오래된 PENDING 주문 복구 API/Batch | PG 승인 여부와 포인트 차감 여부를 대조하는 기준이 아직 없음 | 관리자 API 또는 Spring Batch Job, PG 결과 조회, 포인트 ledger, 관리자 알림 |
 | outbox 자동 worker | 보상 실패 기록까지만 구현 | 재시도 간격, 중복 처리, 계속 실패하는 이벤트 처리 정책 |
 | Kafka/MQ | 현재 동기 구조에서는 비용 대비 과함 | consumer idempotency, DLQ, 운영 모니터링 |
 | 결과 replay idempotency | 현재는 duplicate reject로 충분하다고 판단 | idempotency table 또는 주문 상태별 응답 재구성 |

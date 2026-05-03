@@ -175,7 +175,7 @@ Redis fallback에서는 공정성과 처리량이 약해진다. 대신 DB `UPDAT
 
 현재 구현은 이 케이스를 자동 복구하지 않는다. 특히 서버가 `Y_POINT` 차감 후 payment 저장 전에 종료되면, DB의 승인 결제 기록만으로는 포인트 차감 여부를 판단할 수 없다. 따라서 단순히 오래된 `PENDING` 주문을 실패 처리하고 재고를 복구하는 스크립트는 안전하지 않다.
 
-운영 복구를 하려면 PG 승인 결과, 포인트 차감 이력, payment 저장 상태를 먼저 대조해야 한다. 이 영역의 수동 복구 기준, 자동 worker, PG 결과 조회 기반 복구는 [`06-long-term-roadmap.md`](./06-long-term-roadmap.md)의 Phase 1에서 추적한다.
+운영 복구를 하려면 PG 승인 결과, 포인트 차감 이력, payment 저장 상태를 먼저 대조해야 한다. 이 영역의 수동 복구 기준, 관리자 API 또는 Spring Batch Job 기반 복구 방식, PG 결과 조회 기반 복구는 [`06-long-term-roadmap.md`](./06-long-term-roadmap.md)의 Phase 1에서 추적한다.
 
 ### 6.2 lock 보유 중 서버 종료
 

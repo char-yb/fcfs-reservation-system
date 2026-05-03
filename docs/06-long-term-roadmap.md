@@ -20,7 +20,7 @@
 | DB를 최종 기준으로 둔다 | Redis counter, lock, cache는 빠른 방어선이고 최종 재고/주문 상태는 DB로 판단한다. |
 | 복구 가능성을 처리량보다 먼저 본다 | 장애 시 처리량이 낮아져도 주문/결제/재고 정합성이 깨지지 않아야 한다. |
 | 외부 side effect는 추적 가능해야 한다 | PG 승인, PG 취소, 포인트 차감/환불은 장애 후 대조할 수 있는 기록이 필요하다. |
-| 자동화 전 수동 runbook을 먼저 만든다 | 자동 worker가 잘못 동작하면 피해가 커진다. 먼저 조회/대조/수동 복구 기준을 명확히 한다. |
+| 자동화 전 수동 runbook을 먼저 만든다 | 복구 로직이 잘못 동작하면 피해가 커진다. 먼저 조회/대조/수동 복구 기준을 명확히 한다. |
 | Kafka/MQ는 병목이나 유실 문제가 증명된 뒤 도입한다 | 현재 동기 흐름에서는 MQ가 정합성을 자동으로 보장하지 않는다. 도입 시 idempotent consumer, DLQ, 재처리 정책이 함께 필요하다. |
 
 ---
@@ -33,7 +33,7 @@
 
 | 항목 | 부족한 점 | 첫 산출물 | 검증 기준 |
 |---|---|---|---|
-| 오래된 `PENDING` 주문 복구 | 결제 중 서버 종료 시 주문과 재고가 중간 상태로 남을 수 있다. PG 승인 여부와 포인트 차감 여부를 대조하기 전에는 안전하게 실패 처리할 수 없다. | 수동 복구 runbook, PG 결과 대조 정책, 관리자 API 또는 자동 worker | 강제 중단 시나리오 후 주문/결제/재고를 일관 상태로 복구 |
+| 오래된 `PENDING` 주문 복구 | 결제 중 서버 종료 시 주문과 재고가 중간 상태로 남을 수 있다. PG 승인 여부와 포인트 차감 여부를 대조하기 전에는 안전하게 실패 처리할 수 없다. | 수동 복구 runbook, PG 결과 대조 정책, 관리자 API 또는 Spring Batch Job | 강제 중단 시나리오 후 주문/결제/재고를 일관 상태로 복구 |
 | PG 결과 조회 기반 확정/실패 처리 | 현재 mock PG는 즉시 성공/실패만 반환한다. 실제 PG는 timeout과 결과 불명이 발생한다. | PG transaction id 저장, 결과 조회 gateway, timeout 후 상태 전이 정책 | PG timeout 후 재조회로 `CONFIRMED` 또는 `FAILED`가 결정됨 |
 | outbox 재처리 worker | 보상 실패 기록은 남지만 자동 재시도는 없다. | `COMPENSATION_FAILURE` worker, 재시도 간격, 재시도 제한, 계속 실패하는 이벤트 상태 | cancel 실패 이벤트가 재시도되고 최종 성공/수동대상으로 분류됨 |
 | Y 포인트 ledger | 현재 잔액 조건부 차감은 동시성은 보강됐지만 감사 이력이 없다. | `user_point_transactions` 또는 equivalent ledger | 차감/환불 이력이 잔액과 대조 가능 |
@@ -90,7 +90,7 @@ mock PG에서 실제 PG로 넘어가면 timeout, webhook, 중복 승인, 취소 
 | 우선순위 | 작업 | 이유 |
 |---|---|---|
 | P0 | 오래된 `PENDING` 주문 수동 복구 기준 | 서버 중단 시 재고 누수와 결제 불명 상태를 안전하게 분류하기 위한 첫 단계 |
-| P0 | 오래된 `PENDING` 주문 자동 복구 | 수동 복구 기준을 worker/API로 확장 |
+| P0 | 오래된 `PENDING` 주문 자동 복구 | 수동 복구 기준을 관리자 API 또는 Spring Batch Job으로 확장 |
 | P0 | PG 승인/취소/조회 결과 영속화 | 외부 side effect를 장애 후 대조하기 위한 최소 기록 |
 | P1 | outbox compensation retry worker | 현재 기록만 남는 보상 실패를 자동 복구 대상으로 전환 |
 | P1 | Y 포인트 ledger | 잔액 정합성뿐 아니라 감사와 고객 문의 대응에 필요 |
@@ -121,11 +121,110 @@ mock PG에서 실제 PG로 넘어가면 timeout, webhook, 중복 승인, 취소 
 1. 결제 실행 전/후 payment attempt record를 남긴다.
 2. 오래된 `PENDING` 주문 조회 기준과 수동 복구 runbook을 먼저 만든다.
 3. PG 결과 조회 mock을 추가한다.
-4. 미완료 주문 복구 관리자 API 또는 worker를 만든다.
+4. 미완료 주문 복구 관리자 API 또는 Spring Batch Job을 만든다.
 5. 강제 종료 시나리오를 테스트로 재현한다.
 6. 복구 후 `confirmed_orders + db_remaining == total_quantity`, `pending_orders == 0`, payment status가 주문 상태와 일치하는지 검증한다.
 
 이 마일스톤이 닫히면 현재 문서의 가장 큰 남은 위험인 `PENDING` 주문/재고 누수 문제가 운영 가능한 수준으로 낮아진다.
+
+### 오래된 PENDING 주문 복구 구현 방식
+
+2대 이상의 애플리케이션 서버를 전제로 하면 `@Scheduled`는 기본 선택지에서 제외한다. 각 서버에서 같은 스케줄이 동시에 실행될 수 있고, 별도 분산 스케줄 락을 추가하면 복구 로직보다 실행 제어가 더 복잡해진다.
+
+대신 복구는 다음 두 방식 중 하나로 실행한다.
+
+| 실행 방식 | 장점 | 주의점 | 판단 |
+|---|---|---|---|
+| 관리자 API 또는 CLI | 추가 라이브러리 없이 시작 가능. 운영자가 대상 범위와 dry-run 여부를 제어하기 쉽다. | 대량 처리, 재시작, 처리 이력 관리가 약하다. | 1차 구현에 적합하다. |
+| Spring Batch Job | Job/Step 실행 이력, 재시작, chunk 처리, 실패 항목 추적이 좋다. | Spring Batch JobRepository 메타 테이블과 실행 파라미터 설계가 필요하다. | 주문 수가 많아지거나 반복 복구가 필요하면 적합하다. |
+
+두 방식 모두 같은 `PendingOrderRecoveryService`를 호출해야 한다. 실행기가 API인지 Batch인지와 무관하게 정합성은 DB claim과 상태 전이가 지켜야 한다.
+
+#### 필요한 저장 구조
+
+자동 판단을 하려면 현재 테이블만으로는 부족하다. 최소한 다음 기록이 필요하다.
+
+| 추가/보강 항목 | 이유 |
+|---|---|
+| `payments` 선저장 | 결제 실행 전에 `PENDING` payment attempt를 만들어야 서버 종료 후 어떤 결제를 시도했는지 알 수 있다. |
+| `payments.external_request_id` | PG에 보낸 멱등키이자 결과 조회 키다. 예: `{orderKey}:{method}` |
+| PG 결과 조회 gateway | `external_request_id`로 `APPROVED`, `DECLINED`, `NOT_FOUND`, `UNKNOWN`을 조회한다. |
+| `user_point_transactions` | Y 포인트 차감/환불 이력을 남겨 서버 종료 후 포인트 차감 여부를 대조한다. |
+| 주문 복구 claim 상태 | 여러 서버나 여러 배치 실행이 같은 주문을 동시에 복구하지 못하게 한다. |
+
+주문 복구 claim은 `orders.status`에 `RECOVERING`을 추가하는 방식이 가장 단순하다.
+
+```text
+PENDING -> RECOVERING -> CONFIRMED
+PENDING -> RECOVERING -> FAILED
+RECOVERING -> MANUAL_REVIEW
+```
+
+`MANUAL_REVIEW`는 PG 결과가 `UNKNOWN`이거나 포인트 이력과 payment 상태가 맞지 않아 자동 판단하면 위험한 주문을 분리하기 위한 상태다. 상태를 늘리고 싶지 않다면 `recovery_status`, `recovery_reason`, `recovery_claimed_at` 컬럼을 별도로 둬도 된다.
+
+#### 복구 처리 순서
+
+복구 서비스는 다음 순서로 동작한다.
+
+1. 오래된 `PENDING` 주문 후보를 찾는다.
+   - 예: `orders.status = 'PENDING'`
+   - 예: `orders.created_at < NOW() - INTERVAL 5 MINUTE`
+2. 후보 주문을 DB 조건부 update로 claim한다.
+   - `UPDATE orders SET status = 'RECOVERING' WHERE id = ? AND status = 'PENDING'`
+   - update count가 1인 실행기만 해당 주문을 처리한다.
+3. 결제 수단별 상태를 대조한다.
+   - `CREDIT_CARD`, `Y_PAY`: `external_request_id`로 PG 결과 조회
+   - `Y_POINT`: `user_point_transactions`에서 차감 이력 조회
+   - `payments`의 attempt/approved/cancelled 상태와 외부 결과 비교
+4. 주문을 분류한다.
+
+| 분류 | 조건 | 처리 |
+|---|---|---|
+| 결제 전 중단 | PG 승인 없음, 포인트 차감 없음 | 주문 `FAILED`, `order_products.canceled_at`, DB 재고 복구 |
+| 전체 결제 승인 | 모든 결제 수단 승인 또는 차감 확인 | payment `APPROVED`, 주문 `CONFIRMED`, `order_products.confirmed_at` |
+| 일부 결제 승인 | 일부 PG 승인 또는 포인트 차감만 확인 | 승인된 결제 역순 보상 후 주문 `FAILED`, DB 재고 복구 |
+| 결과 불명 | PG `UNKNOWN`, 포인트 이력 불일치 | `MANUAL_REVIEW`, 재고 복구 금지 |
+
+5. DB 상태 변경은 주문 단위 짧은 트랜잭션으로 처리한다.
+6. 주문을 `FAILED`로 닫아 재고를 복구했다면 Redis `stock:{productOptionId}`는 DB `product_stock.remaining_quantity` 기준으로 다시 맞춘다.
+7. 처리 결과와 판단 근거를 audit log 또는 복구 이력 테이블에 남긴다.
+
+#### Spring Batch로 구현할 때
+
+Spring Batch를 선택하면 다음 구조가 적합하다.
+
+```text
+PendingOrderRecoveryJob
+  Step 1. 오래된 PENDING 주문 ID 조회
+  Step 2. 주문별 DB claim
+  Step 3. PG/Y_POINT 대조 후 CONFIRMED, FAILED, MANUAL_REVIEW 중 하나로 상태 전이
+  Step 4. 처리 결과 집계와 실패 항목 기록
+```
+
+구현 단위는 다음처럼 나눈다.
+
+| 컴포넌트 | 역할 |
+|---|---|
+| `PendingOrderRecoveryReader` | 오래된 `PENDING` 주문 ID를 page/chunk 단위로 읽는다. |
+| `PendingOrderRecoveryProcessor` | 주문 ID를 claim하고 PG/포인트 상태를 조회해 복구 결정을 만든다. claim 실패 시 이미 다른 실행기가 가져간 주문이므로 skip한다. |
+| `PendingOrderRecoveryWriter` | 복구 결정을 DB에 반영하고 Redis 재고를 DB 기준으로 맞춘다. |
+| `PendingOrderRecoveryService` | API와 Batch가 함께 사용하는 실제 복구 유스케이스다. |
+
+Spring Batch의 JobRepository는 같은 job execution 이력과 재시작을 관리하는 데 유용하지만, 2대 이상 서버에서 주문 중복 복구를 막는 최종 장치로 보면 안 된다. 같은 Job이 서로 다른 파라미터로 동시에 실행될 수 있고, 운영자가 API와 Batch를 동시에 실행할 수도 있다. 따라서 최종 중복 방어는 반드시 주문 단위 DB claim으로 해야 한다.
+
+Batch 실행은 `@Scheduled`가 아니라 운영자가 명시적으로 시작하는 방식으로 둔다.
+
+```text
+POST /internal/recovery/pending-orders/jobs
+```
+
+또는 운영 runbook에서 CLI로 실행한다.
+
+```text
+java -jar app.jar --spring.batch.job.name=pendingOrderRecoveryJob cutoffMinutes=5 dryRun=false
+```
+
+이렇게 하면 2대 이상 서버 구조에서도 스케줄 중복 실행 문제를 피하고, 복구 판단과 처리 이력을 Spring Batch로 남길 수 있다.
 
 ### 수동 복구 runbook 초안
 
