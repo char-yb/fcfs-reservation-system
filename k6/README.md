@@ -1,6 +1,6 @@
 # k6 부하테스트
 
-이 디렉터리는 과제 조건의 트래픽 프로파일을 검증하기 위한 k6 스크립트를 담고 있다.
+이 디렉터리는 요구된 트래픽 프로파일을 검증하기 위한 k6 스크립트를 담고 있다.
 대상은 Checkout API와 Booking API이며, 평시 50 TPS 상태에서 00:00 정각에 500~1000 TPS로 급등하는 피크를 재현한다.
 
 ## 사전 준비
@@ -90,7 +90,7 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 | `baseUrl` | `k6/lib/config.js` | 부하테스트 대상 API 서버 주소 |
 | `productOptionId` | `k6/lib/config.js`, `k6/scripts/*.sh` | 테스트 대상 상품 옵션 ID. DB 시드, Redis `stock:{productOptionId}`, API 요청이 모두 같은 값을 써야 한다. |
 | `productPrice` | `k6/lib/config.js`, `reset-local-data.sh` | 상품 가격이자 기본 Booking 결제 금액 |
-| `stock` | `k6/lib/config.js`, `reset-local-data.sh` | 과제 기준 한정 수량. 기본값은 10개다. |
+| `stock` | `k6/lib/config.js`, `reset-local-data.sh` | 요구 기준 한정 수량. 기본값은 10개다. |
 | `userStartId` | `k6/lib/config.js`, `reset-local-data.sh` | 테스트 사용자 ID 시작값 |
 | `userCount` | `k6/lib/config.js`, `reset-local-data.sh` | 시드하고 순환 사용할 사용자 수 |
 | `timeout` | `k6/lib/config.js` | k6 HTTP 요청 timeout |
@@ -99,7 +99,7 @@ docker run --rm -i --network host -v "$PWD/k6:/scripts" grafana/k6 run /scripts/
 
 | 변수 | 의미 |
 |---|---|
-| `baseTps` | 00:00 직전 평시 요청률. 과제 기준은 50 TPS다. |
+| `baseTps` | 00:00 직전 평시 요청률. 요구 기준은 50 TPS다. |
 | `peakTps` | 00:00 정각 이후 목표 요청률. 500 또는 1000으로 바꿔 비교한다. |
 | `checkoutTps` | 혼합 시나리오에서 Checkout API에 지속적으로 주는 요청률 |
 | `warmupDuration` | 00:00 직전 평시 요청률을 유지하는 시간 |

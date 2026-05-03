@@ -5,7 +5,7 @@ export const config = {
     productOptionId: 1,
     // Booking 요청의 결제 금액. DB에 시드되는 상품 가격과 같아야 한다.
     productPrice: 100000,
-    // 과제 기준 한정 수량. reset-local-data.sh의 stock과 맞춘다.
+    // 요구 기준 한정 수량. reset-local-data.sh의 stock과 맞춘다.
     stock: 10,
     // 부하테스트가 사용할 첫 번째 사용자 ID.
     userStartId: 1,

@@ -10,7 +10,7 @@ const baseTps = 50;
 const peakTps = 1000;
 // 00:00 직전 평시 트래픽 유지 시간.
 const warmupDuration = '1m';
-// 00:00 정각 급등 시간. 과제 가정상 순간 급등이므로 1초로 둔다.
+// 00:00 정각 급등 시간. 순간 급등을 가정하므로 1초로 둔다.
 const rampDuration = '1s';
 // 00:00 이후 피크 TPS 유지 시간.
 const spikeDuration = '5m';
