@@ -22,7 +22,7 @@
 - [결제 확장성](docs/03-payment-extensibility.md)
 - [장애 대응/보상](docs/04-fault-tolerance.md)
 - [장기 개선 계획](docs/06-long-term-roadmap.md)
-- [주요 의사결정](docs/DECISIONS.md)
+- [주요 의사결정](DECISIONS.md)
 - [k6 부하테스트](k6/README.md)
 
 ## 시스템 구조
@@ -668,4 +668,4 @@ redis_stock=0
 | 분산락과 트랜잭션 | 락 안의 DB 상태 변경은 독립 트랜잭션으로 분리했습니다. 외부 결제는 락과 DB 트랜잭션 밖에서 실행합니다. |
 | 로컬 리뷰 데이터 | Docker 실행 직후 API를 호출할 수 있도록 `local-seed` Spring profile과 Redis 재고 카운터 초기화를 추가했습니다. |
 
-현재 구현은 “Redis가 정상일 때 빠르게 매진 요청을 거절하고, Redis가 장애일 때도 DB 데이터는 맞게 유지한다”는 쪽에 무게를 둡니다. 자세한 선택 근거와 한계는 [DECISIONS.md](docs/DECISIONS.md)에 기록되어 있습니다.
+현재 구현은 “Redis가 정상일 때 빠르게 매진 요청을 거절하고, Redis가 장애일 때도 DB 데이터는 맞게 유지한다”는 쪽에 무게를 둡니다. 자세한 선택 근거와 한계는 [DECISIONS.md](DECISIONS.md)에 기록되어 있습니다.
