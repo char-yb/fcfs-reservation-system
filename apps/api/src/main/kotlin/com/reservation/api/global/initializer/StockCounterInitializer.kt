@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
  * ## 필요한 이유
  * Booking API는 3-layer 재고 보호를 사용한다.
  * - Layer 1: Redis atomic DECR — 빠른 매진 거절 (Fast-Fail)
- * - Layer 2: Redisson 분산락 — 결제 구간 직렬화
+ * - Layer 2: Redisson fair lock — DB 예약 구간 직렬화
  * - Layer 3: DB 조건부 UPDATE — 최후 정합성 보장
  *
  * Redis에 `stock:{productOptionId}` 키가 없는 상태에서 DECR을 호출하면 Redis는 값을 0으로 간주해 -1을 반환한다.

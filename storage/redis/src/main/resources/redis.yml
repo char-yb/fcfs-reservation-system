@@ -7,7 +7,7 @@ resilience4j:
   circuitbreaker:
     instances:
       redis:
-        # 예약 1건은 Redis counter + distributed lock으로 최소 2 Redis ops를 사용한다.
+        # 예약 1건은 Redis counter + fair lock으로 최소 2 Redis ops를 사용한다.
         # 인스턴스당 100 booking TPS를 기준으로 보면 약 200 Redis ops/s이고, 100개 표본은 약 0.5초 분량이라 장애 감지는 빠르되 1~2회 timeout으로 circuit이 열리지 않는다.
         sliding-window-type: COUNT_BASED
         sliding-window-size: 100

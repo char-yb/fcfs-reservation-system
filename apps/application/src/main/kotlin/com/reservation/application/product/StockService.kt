@@ -32,7 +32,7 @@ class StockService(
     }
 
     /**
-     * L1(Redis counter) + L2(distributed lock) 재고 예약 흐름 실행.
+     * L1(Redis counter) + L2(fair lock) 재고 예약 흐름 실행.
      * Redis adapter가 장애 또는 circuit open 상태를 RedisUnavailableException으로 변환하면
      * L1/L2를 건너뛰고 fallbackAction을 DB-only fallback으로 실행한다.
      * action 내부 또는 lock 획득 실패 시 발생하는 모든 예외에서 L1 카운터를 복구한다.
