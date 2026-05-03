@@ -1,6 +1,6 @@
 # Long-Term Improvement Roadmap
 
-이 문서는 현재 구현이 과제 요구사항을 만족한 뒤, 실제 운영 수준으로 올리기 위해 남아 있는 부족한 점과 장기 개선 방향을 정리한다.
+이 문서는 현재 구현이 요구사항을 만족한 뒤, 실제 운영 수준으로 올리기 위해 남아 있는 부족한 점과 장기 개선 방향을 정리한다.
 
 현재 시스템은 다음 목표에 집중되어 있다.
 
@@ -33,7 +33,7 @@
 
 | 항목 | 부족한 점 | 첫 산출물 | 검증 기준 |
 |---|---|---|---|
-| 오래된 `PENDING` 주문 복구 | 결제 중 서버 종료 시 주문과 재고가 중간 상태로 남을 수 있다. | `PENDING` 주문 조회 기준, PG 결과 대조 정책, 수동 복구 script 또는 관리자 API | 강제 중단 시나리오 후 주문/결제/재고를 일관 상태로 복구 |
+| 오래된 `PENDING` 주문 복구 | 결제 중 서버 종료 시 주문과 재고가 중간 상태로 남을 수 있다. PG 승인 여부와 포인트 차감 여부를 대조하기 전에는 안전하게 실패 처리할 수 없다. | 수동 복구 runbook, PG 결과 대조 정책, 관리자 API 또는 자동 worker | 강제 중단 시나리오 후 주문/결제/재고를 일관 상태로 복구 |
 | PG 결과 조회 기반 확정/실패 처리 | 현재 mock PG는 즉시 성공/실패만 반환한다. 실제 PG는 timeout과 결과 불명이 발생한다. | PG transaction id 저장, 결과 조회 gateway, timeout 후 상태 전이 정책 | PG timeout 후 재조회로 `CONFIRMED` 또는 `FAILED`가 결정됨 |
 | outbox 재처리 worker | 보상 실패 기록은 남지만 자동 재시도는 없다. | `COMPENSATION_FAILURE` worker, 재시도 간격, 재시도 제한, 계속 실패하는 이벤트 상태 | cancel 실패 이벤트가 재시도되고 최종 성공/수동대상으로 분류됨 |
 | Y 포인트 ledger | 현재 잔액 조건부 차감은 동시성은 보강됐지만 감사 이력이 없다. | `user_point_transactions` 또는 equivalent ledger | 차감/환불 이력이 잔액과 대조 가능 |
@@ -58,7 +58,7 @@
 | 핵심 metric | 현재는 k6와 정합성 검증 스크립트 중심이다. | Prometheus 지표 또는 Actuator metric: pending count, outbox failure count, Redis circuit state, lock failure count | 대시보드에서 재고/주문/결제 이상 징후 확인 |
 | alert 기준 | 어떤 수치가 장애인지 정의가 부족하다. | alert rule: 오래된 PENDING, outbox retry 초과, Redis fallback 지속, payment compensation failure | 장애 주입 시 alert 발생 |
 | 구조화 로그 | 장애 분석에 필요한 correlation key가 부족할 수 있다. | orderKey, orderId, productOptionId, payment method, transactionId 포함 로그 | 단일 주문의 예약/결제/보상 흐름 추적 |
-| 운영 runbook | 수동 복구 순서가 문서상 개략적이다. | 장애 유형별 query, 판단 기준, 복구 명령 | 운영자가 동일 절차로 복구 가능 |
+| 운영 runbook | 오래된 `PENDING`, 보상 실패, Redis 재고 불일치의 판단 기준이 아직 부족하다. | 장애 유형별 query, 판단 기준, 관리자 API | 운영자가 동일 절차로 복구 가능 |
 
 ### Phase 4. 실제 외부 연동과 보안
 
@@ -89,7 +89,8 @@ mock PG에서 실제 PG로 넘어가면 timeout, webhook, 중복 승인, 취소 
 
 | 우선순위 | 작업 | 이유 |
 |---|---|---|
-| P0 | 오래된 `PENDING` 주문 복구 | 서버 중단 시 재고 누수와 결제 불명 상태를 닫는 핵심 복구 루프 |
+| P0 | 오래된 `PENDING` 주문 수동 복구 기준 | 서버 중단 시 재고 누수와 결제 불명 상태를 안전하게 분류하기 위한 첫 단계 |
+| P0 | 오래된 `PENDING` 주문 자동 복구 | 수동 복구 기준을 worker/API로 확장 |
 | P0 | PG 승인/취소/조회 결과 영속화 | 외부 side effect를 장애 후 대조하기 위한 최소 기록 |
 | P1 | outbox compensation retry worker | 현재 기록만 남는 보상 실패를 자동 복구 대상으로 전환 |
 | P1 | Y 포인트 ledger | 잔액 정합성뿐 아니라 감사와 고객 문의 대응에 필요 |
@@ -118,10 +119,38 @@ mock PG에서 실제 PG로 넘어가면 timeout, webhook, 중복 승인, 취소 
 가장 현실적인 다음 마일스톤은 "서버가 결제 도중 죽어도 운영자가 복구할 수 있다"를 증명하는 것이다.
 
 1. 결제 실행 전/후 payment attempt record를 남긴다.
-2. 오래된 `PENDING` 주문 조회 기준을 정한다.
+2. 오래된 `PENDING` 주문 조회 기준과 수동 복구 runbook을 먼저 만든다.
 3. PG 결과 조회 mock을 추가한다.
-4. 미완료 주문 복구 script 또는 관리자 API를 만든다.
+4. 미완료 주문 복구 관리자 API 또는 worker를 만든다.
 5. 강제 종료 시나리오를 테스트로 재현한다.
 6. 복구 후 `confirmed_orders + db_remaining == total_quantity`, `pending_orders == 0`, payment status가 주문 상태와 일치하는지 검증한다.
 
 이 마일스톤이 닫히면 현재 문서의 가장 큰 남은 위험인 `PENDING` 주문/재고 누수 문제가 운영 가능한 수준으로 낮아진다.
+
+### 수동 복구 runbook 초안
+
+오래된 `PENDING` 주문을 바로 `FAILED`로 바꾸고 재고를 복구하는 방식은 위험하다. 서버가 포인트 차감이나 PG 승인 이후 payment 저장 전에 종료됐을 수 있기 때문이다. 따라서 수동 복구는 다음 순서를 따라야 한다.
+
+1. 오래된 `PENDING` 주문을 조회한다.
+   - 기준 예: `orders.status = 'PENDING'`
+   - 기준 예: `orders.created_at < NOW() - N minutes`
+   - `order_products`, `payments`, 사용자 포인트 이력, PG 거래 결과를 함께 확인한다.
+2. 주문을 상태별로 분류한다.
+   - PG 승인 또는 포인트 차감이 확인된 주문: 실패 처리하지 않고 PG 결과 조회 후 `CONFIRMED` 또는 보상 대상으로 분류한다.
+   - PG 요청 전이고 포인트 차감도 없는 주문: 실패 처리와 재고 복구 후보로 본다.
+   - PG 결과나 포인트 차감 여부가 불명확한 주문: 수동 확인 대상으로 남긴다.
+3. 실패 처리 후보만 하나의 DB 트랜잭션에서 처리한다.
+   - `orders.status`를 `FAILED`로 변경한다.
+   - `order_products.canceled_at`을 기록한다.
+   - `product_stock.remaining_quantity`를 복구한다.
+4. DB 반영 후 Redis `stock:{productOptionId}`는 DB `product_stock.remaining_quantity` 기준으로 다시 맞춘다.
+5. 처리 결과를 감사 가능하게 남긴다.
+   - 어떤 주문을 어떤 근거로 실패 처리했는지 기록한다.
+   - 수동 처리자, 처리 시각, PG/포인트 확인 결과를 남긴다.
+6. 복구 후 다음 값을 확인한다.
+   - `pending_orders == 0` 또는 남은 `PENDING`이 모두 수동 확인 대상으로 분류됨
+   - `confirmed_orders + db_remaining == total_quantity`
+   - Redis 재고와 DB 재고가 일치
+   - payment 상태와 order 상태가 충돌하지 않음
+
+이 runbook을 실제 코드로 옮길 때는 먼저 PG 결과 조회와 포인트 ledger가 필요하다. 이 두 기록 없이 오래된 `PENDING` 주문을 자동 실패 처리하면 포인트 차감 누락 복구나 결제 성공 주문 취소 같은 문제가 생길 수 있다.

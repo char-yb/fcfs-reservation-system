@@ -208,7 +208,7 @@ Booking API는 결제 수단별 구현체를 직접 분기하지 않는다.
 1. `BookingController`가 `Idempotency-Key` 형식을 검증한다.
 2. `BookingRequest.toCommand(userId, orderKey)`가 path `userId`를 `PaymentCommand.userId`에 주입한다.
 3. `BookingFacade`가 판매 오픈 검증과 `StockService.executeWithStockReservation` 호출을 조율한다.
-4. `StockService`는 Redis Lua counter와 Redisson lock을 사용하고, lock 내부에서 `BookingReservationProcessor.reserve`가 DB 재고 차감과 PENDING 주문 생성을 `REQUIRES_NEW`로 수행한다.
+4. `StockService`는 Redis Lua counter와 Redisson fair lock을 사용하고, lock 내부에서 `BookingReservationProcessor.reserve`가 DB 재고 차감과 PENDING 주문 생성을 `REQUIRES_NEW`로 수행한다.
 5. lock 해제 후 `PaymentService.execute(command.payments, command.totalAmount, orderId)`가 결제 실행과 보상을 담당한다.
 6. 결제 성공 시 결제 내역을 저장하고 주문을 확정한다. 실패 시 주문 실패 처리, DB 재고 복구, 필요 시 Redis counter 복구를 수행한다.
 

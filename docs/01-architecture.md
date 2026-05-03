@@ -45,7 +45,7 @@ fcfs-reservation
 | `apps:application` | 예약 유스케이스 조율, 결제 전략 실행, 재고 gate, 트랜잭션 경계 |
 | `apps:domain` | 도메인 모델, repository/gateway interface, 공통 error/lock/redis abstraction |
 | `storage:rdb` | JPA entity/repository, Flyway migration, local seed data |
-| `storage:redis` | Redis Lua counter, Redisson lock, Redis circuit breaker 예외 변환 |
+| `storage:redis` | Redis Lua counter, Redisson fair lock, Redis circuit breaker 예외 변환 |
 | `external:pg` | 신용카드/Y 페이 mock PG gateway |
 
 의존 방향은 `api -> application -> domain`이며, `storage:*`와 `external:pg`는 domain/application의 port를 구현한다.
@@ -77,7 +77,7 @@ flowchart LR
 |---|---|
 | `BookingController` | `Idempotency-Key` UUID 형식 검증 후 `BookingCommand` 생성 |
 | `BookingFacade` | 판매 오픈 검증, Redis/DB 재고 예약, 결제 실행, 주문 확정/실패 보상 조율 |
-| `StockService` | Redis Lua counter + Redisson lock + DB-only fallback 흐름 제공 |
+| `StockService` | Redis Lua counter + Redisson fair lock + DB-only fallback 흐름 제공 |
 | `BookingReservationProcessor` | DB 재고 차감, PENDING 주문 생성, CONFIRMED/FAILED 상태 변경을 `REQUIRES_NEW`로 처리 |
 | `PaymentService` | 결제 조합 검증, `Y_POINT` 우선 실행, 실패 시 성공 결제 역순 보상 |
 | `StockCounterInitializer` | API 기동 시 DB 재고 기준으로 Redis `stock:{productOptionId}` 초기화 |
@@ -308,7 +308,7 @@ sequenceDiagram
     participant F as BookingFacade
     participant S as StockService
     participant R as Redis
-    participant L as Redisson Lock
+    participant L as Redisson Fair Lock
     participant D as MySQL
     participant P as PaymentService
     participant G as PG/Y Point
@@ -332,7 +332,7 @@ sequenceDiagram
     A-->>C: 200 CONFIRMED
 ```
 
-분산락은 DB 재고 차감과 PENDING 주문 생성 구간만 보호한다. 결제는 락 밖에서 실행해 상품 옵션 단위 직렬화 시간을 줄인다.
+분산락은 DB 재고 차감과 PENDING 주문 생성 구간만 보호한다. 정상 Redis 경로에서는 Redisson fair lock으로 Redis counter를 통과한 요청의 DB 예약 순서를 요청 순서에 가깝게 맞춘다. 결제는 락 밖에서 실행해 상품 옵션 단위 직렬화 시간을 줄인다.
 
 ---
 

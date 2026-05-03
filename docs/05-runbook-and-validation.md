@@ -373,5 +373,5 @@ CODEX_VERIFY_MODE=full ./.codex/hooks/verify.sh
 | Checkout 404 | `productOptionId`가 seed 범위인지 확인 |
 | Booking이 모두 매진 | Redis `stock:{productOptionId}`와 DB `product_stock` 확인 |
 | Redis drift | `reset-local-data.sh` 후 재현, Lua decrement 테스트 확인 |
-| PENDING 주문 남음 | 결제 중단 또는 보상 실패 여부 확인 |
+| PENDING 주문 남음 | 결제 중단 또는 보상 실패 여부 확인. PG 승인 여부와 포인트 차감 여부를 대조하기 전에는 주문 실패 처리나 재고 복구를 직접 수행하지 않음 |
 | 보상 실패 | `outbox_events`의 `COMPENSATION_FAILURE` 확인 |
