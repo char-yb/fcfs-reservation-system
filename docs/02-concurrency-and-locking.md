@@ -197,6 +197,26 @@ Redis counter나 lock 호출에서 Redisson 예외 또는 circuit open이 발생
 
 Redis 장애 폴백은 처리량과 공정성을 낮추지만 오버셀링은 막는다.
 
+### 6.1 DB-only 경로의 동시성 안전성
+
+DB-only 폴백에서 추가 락 제어는 불필요하다.
+
+`decrementStock`은 단일 `UPDATE ... WHERE remaining_quantity > 0` 문으로 조건 평가와 차감을 원자적으로 수행한다. InnoDB는 이 UPDATE 실행 시 해당 row에 X-lock을 획득하므로, 동시 요청은 하나씩 직렬로 처리된다. `SELECT → UPDATE` 분리 패턴(lost update 위험)이 아니다.
+
+MySQL 기본 격리 수준 REPEATABLE READ에서 UPDATE/DELETE 구문은 snapshot이 아닌 **current read**를 사용한다. T1이 커밋한 재고 감소가 T2의 UPDATE 조건 평가에 즉시 반영되므로, 동시 실행에서도 오버셀링이 발생하지 않는다.
+
+`orders.order_key`의 `uk_order_key` UNIQUE 제약이 추가 보호선이다. `findByOrderKey` 중복 확인이 race condition에서 통과하더라도 `save` 시점에 DB가 차단한다.
+
+별도 `SELECT ... FOR UPDATE`를 추가하면 X-lock을 이중으로 획득하는 오버헤드만 생긴다.
+
+### 6.2 고부하 시 connection pool 포화 위험
+
+DB-only 폴백 경로는 **오버셀링은 막지만 처리량(throughput) 한계가 있다.**
+
+동시 요청이 모두 같은 row X-lock을 직렬로 대기하므로, 고부하(1000 TPS 수준)에서는 `innodb_lock_wait_timeout`(기본 50s) 내에 락을 못 얻은 트랜잭션이 오류로 실패할 수 있다. prod DB connection pool size 30(`datasource.yml`)이 X-lock 대기에 묶이면 HikariCP connection-timeout 오류가 발생해 전체 서비스 장애로 이어질 수 있다.
+
+Redis 장애는 임시 상태이므로 핵심 대응은 빠른 Redis 복구다. 장기 폴백이 불가피한 상황이라면 fallback 진입 동시성 상한(Semaphore 등)을 pool size 이하로 제한해 DB를 보호하는 것을 고려할 수 있다.
+
 ---
 
 ## 7. 1000 TPS 관점

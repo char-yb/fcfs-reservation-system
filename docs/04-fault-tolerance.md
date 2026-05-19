@@ -185,7 +185,26 @@ Redisson fair lock은 `leaseTime=5s` 후 만료된다. lock 범위가 DB 예약 
 
 ---
 
-## 7. 관측과 운영 체크
+## 7. Redis 복구 후 counter drift
+
+Redis 장애 + circuit OPEN 구간에 DB-only fallback으로 처리된 예약은 Redis counter를 차감하지 않는다. Redis가 복구되더라도 counter가 DB 실제 재고보다 높게 유지되어 L1/L2 보호가 정상 작동하지 않는다.
+
+`StockCounterInitializer`는 앱 기동 시에만 counter를 초기화하므로 운영 중 Redis 복구만으로는 counter drift가 해소되지 않는다. 이때는 다음 Admin API를 호출해 DB 기준으로 counter를 재동기화해야 한다.
+
+```
+POST /api/v1/admin/stock/{productOptionId}/sync
+```
+
+이 엔드포인트는 기존 `StockService.initializeStockCounter(productOptionId)`를 호출해 DB `remaining_quantity` 값을 Redis counter에 덮어쓴다.
+
+**주의사항:**
+- Redis 복구 직후 ~ sync 호출 사이에 들어온 요청은 stale counter로 L1 통과하나, DB 조건부 UPDATE가 최후 보호선으로 동작하므로 오버셀링은 발생하지 않는다.
+- 여러 인스턴스에서 동시에 호출하면 `SET` 덮어쓰기 타이밍에 따라 직전 예약이 반영되지 않을 수 있다. 단일 인스턴스에서 직렬 호출을 권장한다.
+- 이 엔드포인트에는 별도 인증이 없으므로 네트워크 레벨에서 접근을 제한해야 한다.
+
+---
+
+## 8. 관측과 운영 체크
 
 | 지표 | 의미 |
 |---|---|
@@ -195,6 +214,12 @@ Redisson fair lock은 `leaseTime=5s` 후 만료된다. lock 범위가 DB 예약 
 | DB confirmed orders | 실제 판매 완료 수량 |
 | PENDING 주문 수 | 부분 실패 또는 결제 중단 가능성 |
 | `outbox_events`의 `COMPENSATION_FAILURE` | 수동/자동 재처리 대상 |
+
+Redis 복구 후 counter drift 여부는 운영 주기로 다음을 확인한다.
+
+```text
+redis_stock == db_remaining  # 불일치 시 /sync 호출 필요
+```
 
 k6 정합성 검증은 다음 관계를 확인한다.
 
@@ -209,7 +234,7 @@ Redis fallback 경로에서 확정 주문이 발생하면 일시적으로 Redis 
 
 ---
 
-## 8. 테스트 전략
+## 9. 테스트 전략
 
 | 테스트 | 검증 |
 |---|---|
