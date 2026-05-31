@@ -32,7 +32,7 @@ class RedisLockClientTest :
         }
 
         "예약 락은 공정 락을 사용한다" {
-            val lock = lockClient.getLock("lock:booking:1")
+            val lock = lockClient.getFairLock("lock:booking:1")
 
             lock.javaClass.name shouldContain "RedissonFairLock"
         }

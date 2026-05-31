@@ -12,7 +12,7 @@ class RedisLockClient(
     private val redissonClient: RedissonClient,
 ) {
     @CircuitBreaker(name = "redis")
-    fun getLock(key: String): RLock = redissonClient.getFairLock(key)
+    fun getFairLock(key: String): RLock = redissonClient.getFairLock(key)
 
     @CircuitBreaker(name = "redis")
     fun tryLock(

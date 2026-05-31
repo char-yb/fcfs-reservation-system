@@ -21,7 +21,7 @@ class DistributedLockProcessor(
         leaseTime: Duration,
         action: () -> T,
     ): T {
-        val lock = redisLockClient.getLock(key)
+        val lock = redisLockClient.getFairLock(key)
         val acquired = redisLockClient.tryLock(key, lock, waitTime, leaseTime)
         if (!acquired) throw ErrorException(ErrorType.LOCK_ACQUISITION_FAILED)
         try {
