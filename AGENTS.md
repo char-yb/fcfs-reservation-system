@@ -18,6 +18,7 @@
 **Generated artifacts:**
 - Workflow skill: `.agents/skills/fcfs-backend-workflow/`
 - Codex rules: `.codex/rules/`
+- Governance candidates: `.codex/governance/rule-candidates.md`
 - Verification hook: `.codex/hooks/verify.sh`
 - Optional reviewer agent: `.codex/agents/fcfs_reservation_reviewer.toml`
 - Intermediate artifacts: `_workspace/`
@@ -31,3 +32,4 @@
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
 | 2026-04-30 | Initial Codex harness | all | Add repo-local workflow, rules, reviewer, and validation hook. |
+| 2026-05-28 | Add harness governance/eval pointers | harness docs | Clarify where repeated rule candidates and dry-run records live. |

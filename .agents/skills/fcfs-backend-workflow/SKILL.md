@@ -27,13 +27,7 @@ Use this skill for repository-local backend work in `fcfs-reservation`.
 
 1. Read `AGENTS.md`, the relevant `.codex/rules/*` files, and the target source/doc files.
 2. Check `git status --short` before editing. Preserve unrelated user changes.
-3. Classify the work:
-   - API contract or controller behavior.
-   - Application orchestration, transactions, payment policy, or compensation.
-   - Domain model/interface change.
-   - RDB adapter, entity, migration, or query change.
-   - Redis counter, lock, or fallback change.
-   - Harness/docs/test-only change.
+3. Classify the work: API, application orchestration, domain interface, RDB, Redis, harness/docs, or tests.
 4. Inspect both sides of any boundary being changed.
 5. Make the smallest coherent change in the owning module.
 6. Add or update tests according to `.codex/rules/testing.md` when behavior changes.
@@ -62,18 +56,7 @@ For booking, stock, lock, payment, or idempotency changes, explicitly check:
 
 ## Subagent Runbook
 
-Only use subagents when the user explicitly asks for subagents, parallel agents, delegated work, or independent review.
-
-### Explorer-first
-
-Spawn one read-only `explorer` when the code path is unclear.
-
-Prompt contract:
-- Goal: map files, symbols, data flow, module boundaries, tests, and risks.
-- Constraint: read-only, no fixes.
-- Output: relevant file paths, evidence, proposed write boundaries, and validation command.
-
-### Disjoint Worker Implementation
+Only use subagents when explicitly requested. Spawn one read-only `explorer` for unclear paths; output should include files, symbols, data flow, boundaries, tests, risks, and validation.
 
 Use workers only when write scopes are clearly separated by module or path. The parent owns shared contracts and final integration.
 
@@ -102,8 +85,4 @@ For high-risk changes, spawn `fcfs_reservation_reviewer` or a read-only reviewer
 
 ## Output
 
-Final responses should include:
-- What changed.
-- Files created or edited.
-- Validation commands and results.
-- Assumptions or weak-signal conventions.
+Final responses should include what changed, files edited, validation results, and remaining assumptions or weak-signal conventions.
